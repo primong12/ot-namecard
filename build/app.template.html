@@ -1,0 +1,876 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>OT 이름표 생성기 · 이효석아카데미</title>
+<!--SHIM_SCRIPT-->
+<!--JSZIP_SCRIPT-->
+<!--FACEAPI_SCRIPT-->
+<style>
+  @font-face{font-family:'Pretendard';font-weight:800;font-style:normal;font-display:swap;src:url(__FONT_SRC__) format('woff2');}
+  @font-face{font-family:'Pretendard';font-weight:700;font-style:normal;font-display:swap;src:url(__FONT_BOLD__) format('woff2');}
+  @font-face{font-family:'Pretendard';font-weight:600;font-style:normal;font-display:swap;src:url(__FONT_SEMIBOLD__) format('woff2');}
+  :root{
+    --ink:#1a2238; --ink-soft:#5a6582; --line:#e3e7f0; --bg:#f6f7fb;
+    --panel:#ffffff; --accent:#2f4ad0; --accent-soft:#eef1fd;
+    --ok:#1f9d63; --warn:#c8861a; --danger:#c0392b;
+    --radius:14px;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{font-family:"Pretendard","Apple SD Gothic Neo",-apple-system,system-ui,sans-serif;
+    background:var(--bg);color:var(--ink);line-height:1.55;-webkit-font-smoothing:antialiased}
+  .wrap{max-width:1080px;margin:0 auto;padding:32px 24px 80px}
+  header{margin-bottom:28px}
+  .kicker{font-size:13px;letter-spacing:.14em;color:var(--accent);font-weight:700;text-transform:uppercase}
+  h1{font-size:27px;font-weight:800;letter-spacing:-.02em;margin:4px 0 6px}
+  .sub{color:var(--ink-soft);font-size:15px;max-width:620px}
+
+  .grid{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:20px}
+  @media(max-width:720px){.grid{grid-template-columns:1fr}}
+  .card{background:var(--panel);border:1px solid var(--line);border-radius:var(--radius);padding:20px}
+  .card h2{font-size:14px;font-weight:700;margin-bottom:12px;display:flex;align-items:center;gap:8px}
+  .num{display:inline-grid;place-items:center;width:22px;height:22px;border-radius:50%;
+    background:var(--accent);color:#fff;font-size:12px;font-weight:700}
+
+  .drop{border:2px dashed var(--line);border-radius:10px;padding:26px 16px;text-align:center;
+    cursor:pointer;transition:.15s;color:var(--ink-soft);font-size:14px}
+  .drop:hover,.drop.over{border-color:var(--accent);background:var(--accent-soft);color:var(--accent)}
+  .drop strong{color:var(--ink);display:block;font-size:15px;margin-bottom:4px}
+  .count{margin-top:10px;font-size:13px;color:var(--ink-soft)}
+  textarea{width:100%;min-height:148px;border:1px solid var(--line);border-radius:10px;
+    padding:12px;font-size:14px;font-family:inherit;resize:vertical;line-height:1.7}
+  textarea:focus{outline:none;border-color:var(--accent)}
+  .hint{font-size:12.5px;color:var(--ink-soft);margin-top:8px}
+
+  .bar{display:flex;align-items:center;gap:12px;flex-wrap:wrap;margin:4px 0 22px}
+  button{font-family:inherit;font-size:14px;font-weight:600;border:none;border-radius:9px;
+    cursor:pointer;transition:.15s;padding:11px 18px}
+  .btn-primary{background:var(--accent);color:#fff}
+  .btn-primary:hover{filter:brightness(1.08)}
+  .btn-primary:disabled{background:#c5cbe0;cursor:not-allowed;filter:none}
+  .btn-ghost{background:#fff;border:1px solid var(--line);color:var(--ink)}
+  .btn-ghost:hover{border-color:var(--accent);color:var(--accent)}
+  .status{font-size:13.5px;color:var(--ink-soft)}
+  .status.busy{color:var(--accent)}
+
+  .opts{display:flex;gap:18px;align-items:center;font-size:13px;color:var(--ink-soft);margin-left:auto;flex-wrap:wrap}
+  .opts label{display:flex;align-items:center;gap:6px;cursor:pointer}
+  .opts input[type=range]{width:90px}
+
+  .results{display:grid;grid-template-columns:repeat(auto-fill,minmax(178px,1fr));gap:16px;margin-top:8px}
+  .item{background:var(--panel);border:1px solid var(--line);border-radius:12px;overflow:hidden}
+  .item .imgwrap{position:relative;aspect-ratio:1;background:#eef0f6}
+  .item img{width:100%;height:100%;display:block}
+  .item .meta{padding:9px 11px;display:flex;flex-direction:column;gap:7px}
+  .item .nm{font-size:13.5px;font-weight:600;color:var(--ink);font-family:inherit;flex:1;min-width:0;
+    border:1px solid transparent;background:transparent;border-radius:6px;padding:3px 5px}
+  .item .nm:hover{border-color:var(--line)}
+  .item .nm:focus{outline:none;border-color:var(--accent);background:#fff}
+  .item .seq{font-size:11px;color:var(--ink-soft)}
+  .item .nmrow{display:flex;align-items:center;gap:6px}
+  .item .pad{display:flex;flex-direction:column;gap:5px}
+  .item .prow{display:flex;gap:5px}
+  .item .bb{flex:1;min-width:30px;font-size:13px;line-height:1;padding:6px 0;background:#f0f2f8;
+    color:var(--ink);border-radius:6px;font-weight:700;text-align:center}
+  .item .bb:hover{background:var(--accent);color:#fff}
+  .item .dl{font-size:12px;padding:6px 10px;background:var(--accent-soft);color:var(--accent);
+    border-radius:7px;width:100%}
+  .item .dl:hover{background:var(--accent);color:#fff}
+  .badge{position:absolute;top:8px;left:8px;background:var(--warn);color:#fff;font-size:11px;
+    padding:3px 7px;border-radius:6px;font-weight:600}
+  .adjtag{position:absolute;top:8px;right:8px;background:var(--accent);color:#fff;font-size:11px;
+    padding:3px 7px;border-radius:6px;font-weight:600}
+  .empty{text-align:center;color:var(--ink-soft);padding:52px 0;font-size:14px}
+
+  /* ===== 탭 ===== */
+  .tabs{display:flex;gap:4px;border-bottom:1px solid var(--line);margin-bottom:24px}
+  .tab{padding:11px 20px;font-size:15px;font-weight:700;color:var(--ink-soft);background:none;
+    border:none;border-bottom:2px solid transparent;cursor:pointer;border-radius:0}
+  .tab:hover{color:var(--ink)}
+  .tab.active{color:var(--accent);border-bottom-color:var(--accent)}
+  .pane[hidden]{display:none}
+
+  /* ===== 이름표 탭 ===== */
+  .ntgrid{display:grid;grid-template-columns:230px 1fr;gap:16px;margin-bottom:20px}
+  @media(max-width:720px){.ntgrid{grid-template-columns:1fr}}
+  .field label{display:block;font-size:13px;font-weight:700;margin-bottom:8px}
+  .field input[type=number]{width:100%;border:1px solid var(--line);border-radius:10px;padding:12px;
+    font-size:15px;font-family:inherit}
+  .field input[type=number]:focus{outline:none;border-color:var(--accent)}
+  .teamsel{display:flex;gap:8px;margin-top:14px}
+  .teambtn{flex:1;padding:11px 0;font-size:14px;font-weight:700;border:2px solid var(--line);
+    background:#fff;color:var(--ink-soft);border-radius:10px;cursor:pointer;transition:.15s}
+  .teambtn .dot{display:inline-block;width:9px;height:9px;border-radius:50%;margin-right:6px;vertical-align:middle}
+  .teambtn[data-team=growth] .dot{background:#1e9e57}
+  .teambtn[data-team=value]  .dot{background:#d23b3b}
+  .teambtn.active[data-team=growth]{border-color:#1e9e57;background:#e9f7ef;color:#15723f}
+  .teambtn.active[data-team=value]{border-color:#d23b3b;background:#fcebea;color:#a3271f}
+  #ntResults{display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:16px;margin-top:8px}
+  .ntitem{background:var(--panel);border:1px solid var(--line);border-radius:12px;overflow:hidden}
+  .ntitem .imgwrap{background:#eef0f6;padding:12px}
+  .ntitem img{width:100%;display:block;border-radius:6px}
+  .ntitem .meta{padding:10px 12px;display:flex;align-items:center;gap:8px}
+  .ntitem .tt{font-size:11px;font-weight:700;padding:3px 8px;border-radius:6px;white-space:nowrap}
+  .ntitem .tt.growth{background:#e9f7ef;color:#15723f}
+  .ntitem .tt.value{background:#fcebea;color:#a3271f}
+  .ntitem .nm{flex:1;font-size:14px;font-weight:600;border:1px solid transparent;background:transparent;
+    border-radius:6px;padding:4px 6px;font-family:inherit;min-width:0}
+  .ntitem .nm:hover{border-color:var(--line)}
+  .ntitem .nm:focus{outline:none;border-color:var(--accent);background:#fff}
+  .ntitem .dl{font-size:12px;padding:6px 12px;background:var(--accent-soft);color:var(--accent);border-radius:7px}
+  .ntitem .dl:hover{background:var(--accent);color:#fff}
+  .ntitem .rm{font-size:14px;line-height:1;padding:6px 9px;background:#f0f2f8;color:var(--ink-soft);border-radius:7px}
+  .ntitem .rm:hover{background:var(--danger);color:#fff}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <div class="kicker">이효석아카데미 · 엘리트클럽</div>
+    <h1>OT 이름표 생성기</h1>
+    <p class="sub">원본 사진과 이름 명단을 올리면 얼굴 기준으로 1:1 크롭하고 하단에 이름표를 넣어
+      균일한 카드로 만들어 줍니다. 개별 저장과 전체 ZIP 저장을 지원합니다. (인터넷 없이 동작)</p>
+  </header>
+
+  <nav class="tabs">
+    <button class="tab active" data-pane="profile">프로필 만들기</button>
+    <button class="tab" data-pane="nametag">이름표</button>
+  </nav>
+
+  <div id="pane-profile" class="pane">
+  <div class="grid">
+    <div class="card">
+      <h2><span class="num">1</span> 사진 업로드</h2>
+      <div class="drop" id="drop">
+        <strong>사진을 끌어다 놓거나 클릭</strong>
+        촬영 순서대로 정렬됩니다 · JPG / PNG
+        <div class="count" id="photoCount">아직 없음</div>
+      </div>
+      <input type="file" id="fileInput" accept="image/*" multiple hidden>
+      <p class="hint">카메라 한 대로 명단 순서대로 찍었다면 파일명 순서로 자동 정렬됩니다.</p>
+    </div>
+
+    <div class="card">
+      <h2><span class="num">2</span> 이름 명단</h2>
+      <textarea id="names" placeholder="한 줄에 한 명씩 · 띄어쓰기나 쉼표로 구분해도 됩니다&#10;&#10;홍길동 유재석 강호동"></textarea>
+      <p class="hint" id="nameCount">비워두면 사진 파일 이름을 이름으로 사용합니다.</p>
+    </div>
+  </div>
+
+  <div class="bar">
+    <button class="btn-primary" id="run" disabled>이름표 만들기</button>
+    <button class="btn-ghost" id="zip" disabled>전체 ZIP 저장</button>
+    <button class="btn-ghost" id="sheet" disabled>전체 한 장(인쇄용)</button>
+    <span class="status" id="status">사진과 명단을 준비해 주세요.</span>
+    <div class="opts">
+      <label title="얼굴 크기 (1.0=기본, 클수록 얼굴이 더 크게)">얼굴 크기
+        <input type="range" id="faceScale" min="0.8" max="1.4" step="0.05" value="1.0"></label>
+      <label title="하단 이름 띠 높이">이름 띠
+        <input type="range" id="barRatio" min="0.14" max="0.30" step="0.01" value="0.22"></label>
+      <label title="사진들의 밝기·색감을 비슷하게 자동 보정 (배경 기준)">
+        <input type="checkbox" id="ccOn" checked> 색·밝기 맞춤</label>
+      <label title="보정 강도 (왼쪽=약하게, 오른쪽=강하게)">강도
+        <input type="range" id="ccStrength" min="0" max="1" step="0.05" value="0.7"></label>
+      <label title="전체 밝기 (1.0=원본, 오른쪽=밝게)">밝기
+        <input type="range" id="bright" min="0.8" max="1.3" step="0.05" value="1.0"></label>
+    </div>
+  </div>
+
+  <div id="results" class="results"><div class="empty">결과가 여기에 표시됩니다.</div></div>
+  </div><!-- /pane-profile -->
+
+  <div id="pane-nametag" class="pane" hidden>
+    <div class="ntgrid">
+      <div class="card field">
+        <label for="ntGisu">기수</label>
+        <input type="number" id="ntGisu" min="1" value="5" placeholder="예: 5">
+        <div class="teamsel">
+          <button class="teambtn active" data-team="growth"><span class="dot"></span>그로스</button>
+          <button class="teambtn" data-team="value"><span class="dot"></span>밸류</button>
+        </div>
+        <p class="hint" style="margin-top:10px">팀을 고르면 그 팀 색으로 만들어집니다.<br>그로스=초록 · 밸류=빨강</p>
+      </div>
+      <div class="card field">
+        <label for="ntNames">이름 명단</label>
+        <textarea id="ntNames" placeholder="한 줄에 한 명씩&#10;&#10;최순자&#10;홍길동&#10;강호동"></textarea>
+        <p class="hint" id="ntNameCount">이름 뒤에 자동으로 '프로'가 붙습니다. '만들기'를 누르면 선택한 팀 색으로 아래에 추가됩니다.</p>
+      </div>
+    </div>
+    <div class="bar">
+      <button class="btn-primary" id="ntRun" disabled>이름표 만들기</button>
+      <button class="btn-ghost" id="ntPdf" disabled>A4 PDF 저장 (8장씩)</button>
+      <button class="btn-ghost" id="ntClear" disabled>전체 지우기</button>
+      <span class="status" id="ntStatus">기수와 명단을 입력해 주세요.</span>
+    </div>
+    <div id="ntResults"><div class="empty">결과가 여기에 표시됩니다.</div></div>
+  </div><!-- /pane-nametag -->
+</div>
+
+<script>
+const SIZE = 1000;
+const HAIR_ABOVE = 0.5;       // (눈 검출 실패 시 폴백) 얼굴박스 위 머리 추정 높이
+const TARGET_EYE_DIST = 159;  // 정답 카드 평균 눈 간격(px) → 얼굴 크기 기준
+const TARGET_EYE_Y    = 302;  // 정답 카드 평균 눈높이(px, 카드 위에서) → 30% 지점
+let photos = [];                // {file, url, name}
+let modelReady = false, modelTried = false;
+let cards = [];                 // {name, seq, canvas, faceFound}
+
+const $ = id => document.getElementById(id);
+const drop = $('drop'), fileInput = $('fileInput');
+
+// ---- 업로드 ----
+drop.onclick = () => fileInput.click();
+['dragover','dragenter'].forEach(e=>drop.addEventListener(e,ev=>{ev.preventDefault();drop.classList.add('over')}));
+['dragleave','drop'].forEach(e=>drop.addEventListener(e,ev=>{ev.preventDefault();drop.classList.remove('over')}));
+drop.addEventListener('drop',ev=>addFiles(ev.dataTransfer.files));
+fileInput.onchange = ()=>addFiles(fileInput.files);
+
+function addFiles(list){
+  const arr = [...list].filter(f=>f.type.startsWith('image/'));
+  arr.sort((a,b)=>a.name.localeCompare(b.name,'ko',{numeric:true}));
+  for(const f of arr) photos.push({file:f, url:URL.createObjectURL(f), name:f.name});
+  $('photoCount').textContent = photos.length ? `${photos.length}장 선택됨` : '아직 없음';
+  refresh();
+}
+$('names').oninput = ()=>{
+  const n = nameList().length;
+  $('nameCount').textContent = n
+    ? `${n}명 · 사진 순서와 같은 순서로 입력하세요.`
+    : '비워두면 사진 파일 이름을 이름으로 사용합니다.';
+  refresh();
+};
+// 줄바꿈·띄어쓰기·쉼표 무엇으로 구분해도 한 명씩 순서대로 인식
+function nameList(){ return $('names').value.split(/[\s,]+/).map(s=>s.trim()).filter(Boolean); }
+// 파일 이름에서 확장자를 떼어 이름으로 사용 (명단이 없을 때)
+function photoStem(p){ return (p.name||'').replace(/\.[^./\\]+$/,'').trim() || '이름없음'; }
+// 명단을 안 적어도 사진만 있으면 (파일명으로) 만들 수 있음
+function refresh(){ $('run').disabled = !photos.length; }
+
+// ---- 모델 로드 (내장 데이터에서) ----
+async function ensureModel(){
+  if(modelReady) return true;
+  try{
+    // 외부 파일이 필요 없는 연산 백엔드를 선택 (WebGL 우선, 안 되면 CPU) — 오프라인 동작용
+    try{ await faceapi.tf.setBackend('webgl'); }catch(e){}
+    if(faceapi.tf.getBackend()!=='webgl'){ try{ await faceapi.tf.setBackend('cpu'); }catch(e){} }
+    await faceapi.tf.ready();
+    await faceapi.nets.tinyFaceDetector.loadFromUri('models');
+    await faceapi.nets.faceLandmark68TinyNet.loadFromUri('models');  // 눈 위치 검출용
+    modelReady=true;
+  }catch(e){ modelReady=false; }
+  modelTried=true; return modelReady;
+}
+
+// ---- 얼굴 검출 (사진당 1회만, 결과를 캐시해 재사용) ----
+async function detectFace(photo){
+  const img = await loadImg(photo.url);
+  const opts = new faceapi.TinyFaceDetectorOptions({inputSize:512,scoreThreshold:0.3});
+  let eyes=null, box=null;        // eyes: 눈 기준(정밀), box: 박스만(폴백)
+  if(modelReady){
+    try{
+      const d = await faceapi.detectSingleFace(img, opts).withFaceLandmarks(true);
+      if(d){
+        const lm=d.landmarks, L=lm.getLeftEye(), R=lm.getRightEye();
+        const c=pts=>({x:pts.reduce((s,p)=>s+p.x,0)/pts.length, y:pts.reduce((s,p)=>s+p.y,0)/pts.length});
+        const le=c(L), re=c(R);
+        eyes={ cx:(le.x+re.x)/2, cy:(le.y+re.y)/2, d:Math.hypot(re.x-le.x, re.y-le.y) };
+      }
+    }catch(e){}
+    if(!eyes){ try{ const d=await faceapi.detectSingleFace(img, opts); if(d) box=d.box; }catch(e){} }
+  }
+  return {img, eyes, box};
+}
+
+// ---- 카드 합성 (검출결과 det 재사용 → 이동/확대/회전이 즉시 반영, 동기 함수) ----
+// panX/panY: 이동(출력px, panY>0=아래=머리위 공간↑), angle: 회전(라디안), gain: 색보정, bright: 밝기
+function composeCard(det, name, faceScale, barRatio, panX=0, panY=0, angle=0, gain=null, bright=1){
+  const {img, eyes, box} = det;
+  const W=img.naturalWidth, H=img.naturalHeight;
+  const bar = Math.round(SIZE*barRatio);
+  const imgH = SIZE - bar;          // 사진이 들어갈 영역(이름표 위), 가로 SIZE
+
+  // 사진 영역(SIZE×imgH)과 같은 비율의 크롭 사각형으로 왜곡 없이 채움
+  let cropW, cropH, cx, top;
+  if(eyes){
+    // 눈 사이 거리·눈높이를 정답 카드 수치에 맞춤 → 모든 얼굴 동일 크기·동일 눈높이
+    const scale = (TARGET_EYE_DIST * faceScale) / eyes.d;
+    cropW = Math.min(SIZE/scale, W, H*SIZE/imgH);
+    cropH = cropW * imgH / SIZE;
+    cx = eyes.cx;
+    top = eyes.cy - TARGET_EYE_Y*cropW/SIZE;                 // 눈높이를 302px 위치에
+  }else if(box){
+    cropW = Math.min(box.width*faceScale, W, H*SIZE/imgH);
+    cropH = cropW * imgH / SIZE;
+    cx = box.x + box.width/2;
+    top = (box.y + (1 - HAIR_ABOVE)/2 * box.height) - cropH/2;
+  }else{
+    // 얼굴 미검출: 중앙 크롭. 확대 버튼(faceScale)이 동작하도록 반영 (축소는 이미 최대라 의미없음)
+    const base = Math.min(W, H*SIZE/imgH);
+    cropW = base / Math.max(1, faceScale); cropH = cropW * imgH / SIZE;
+    cx = W/2; top = (H - cropH)/2;
+  }
+  const sx = SIZE / cropW;                                   // 소스→출력 배율
+  let left = cx - cropW/2 - panX/sx;                         // 좌우 이동
+  top      = top - panY/sx;                                  // 상하 이동
+  left = Math.max(0, Math.min(left, W-cropW));
+  top  = Math.max(0, Math.min(top,  H-cropH));
+  const pcx = left + cropW/2, pcy = top + cropH/2;           // 회전 중심(크롭 중앙)
+
+  const cv = document.createElement('canvas');
+  cv.width=SIZE; cv.height=SIZE;
+  const g = cv.getContext('2d');
+  g.fillStyle='#000'; g.fillRect(0,0,SIZE,SIZE);
+  g.save();
+  g.beginPath(); g.rect(0,0,SIZE,imgH); g.clip();            // 사진은 이름표 위 영역에만
+  g.translate(SIZE/2, imgH/2); g.rotate(angle); g.scale(sx, sx); g.translate(-pcx, -pcy);
+  g.drawImage(img, 0, 0);
+  g.restore();
+
+  // 색·밝기 자동보정(gain) + 전체 밝기(bright) 를 한 번에 적용 (사진 영역에만)
+  const br = bright||1;
+  const fr=(gain?gain.r:1)*br, fg=(gain?gain.g:1)*br, fb=(gain?gain.b:1)*br;
+  if(fr!==1 || fg!==1 || fb!==1){
+    const id=g.getImageData(0,0,SIZE,imgH), d=id.data;
+    for(let p=0;p<d.length;p+=4){
+      d[p]=Math.min(255,d[p]*fr); d[p+1]=Math.min(255,d[p+1]*fg); d[p+2]=Math.min(255,d[p+2]*fb);
+    }
+    g.putImageData(id,0,0);
+  }
+
+  // 이름표 띠: 디자인 이미지 깔고 그 위에 이름 (tagImg는 미리 로드된 전역)
+  g.drawImage(tagImg, 0, imgH, SIZE, bar);
+  // 외자(두 글자) 이름은 가운데 띄어쓰기로 균형 맞춤 (표시용 — 파일명은 원래대로)
+  const t=(name||'').trim();
+  const disp = (t.length===2 && !/\s/.test(t)) ? t[0]+' '+t[1] : name;
+  g.fillStyle='#fff'; g.textAlign='center'; g.textBaseline='middle';
+  let fs = Math.round(bar*0.66), ls;     // 글자 더 크게
+  do{ ls = fs*0.08;                       // 자간(글자 사이 간격)
+      g.letterSpacing = ls+'px';
+      g.font=`800 ${fs}px "Pretendard","Apple SD Gothic Neo",sans-serif`;
+      if(g.measureText(disp).width <= SIZE*0.82 || fs<=12) break; fs-=3; }while(true);
+  g.fillText(disp, SIZE/2 + ls/2, SIZE-bar/2 + fs*0.04);   // 자간 뒤쪽 여백만큼 보정
+  return {name, canvas:cv, faceFound:!!(eyes||box)};
+}
+
+const loadImg = src => new Promise((res,rej)=>{const i=new Image();i.crossOrigin='anonymous';i.onload=()=>res(i);i.onerror=rej;i.src=src;});
+
+// 이름표 띠 디자인(내장) — 검은 띠 대신 사용
+const TAG_SRC = "__TAG_SRC__";
+const tagImgP = loadImg(TAG_SRC);
+let tagImg = null; tagImgP.then(i=>{ tagImg = i; });   // 미리 로드해 합성 시 즉시 사용
+
+// 상단 좌우 모서리에서 배경색·밝기 측정 (색보정 기준)
+function measureBg(img){
+  const w=160, h=Math.max(1,Math.round(img.naturalHeight/img.naturalWidth*160));
+  const cn=document.createElement('canvas'); cn.width=w; cn.height=h;
+  const g=cn.getContext('2d'); g.drawImage(img,0,0,w,h);
+  const mean=d=>{let r=0,gg=0,b=0,n=0;for(let i=0;i<d.length;i+=4){r+=d[i];gg+=d[i+1];b+=d[i+2];n++;}return [r/n,gg/n,b/n];};
+  const cw=Math.max(2,Math.round(w*0.14)), ch=Math.max(2,Math.round(h*0.10));
+  const L=mean(g.getImageData(0,0,cw,ch).data), R=mean(g.getImageData(w-cw,0,cw,ch).data);
+  const r=(L[0]+R[0])/2, gg=(L[1]+R[1])/2, b=(L[2]+R[2])/2;
+  const uniform = (Math.abs(L[0]-R[0])+Math.abs(L[1]-R[1])+Math.abs(L[2]-R[2])) < 45;  // 좌우 비슷해야 단색
+  return {r, g:gg, b, lum:0.299*r+0.587*gg+0.114*b, uniform};
+}
+// 배경을 목표 밝기 targetL 로 맞추는 보정계수 계산 (단색이면 색까지, 아니면 밝기만)
+function computeGain(bg, targetL, strength){
+  let gr, gg, gb;
+  if(bg.uniform){ gr=targetL/Math.max(1,bg.r); gg=targetL/Math.max(1,bg.g); gb=targetL/Math.max(1,bg.b); }
+  else { const k=targetL/Math.max(1,bg.lum); gr=gg=gb=k; }
+  const cl=v=>Math.max(0.5, Math.min(2.0, v));            // 과보정 방지
+  gr=cl(gr); gg=cl(gg); gb=cl(gb);
+  return { r:1+(gr-1)*strength, g:1+(gg-1)*strength, b:1+(gb-1)*strength };  // 강도 반영
+}
+
+// ---- 실행 ----
+$('run').onclick = async ()=>{
+  const names = nameList();
+  const n = photos.length;                          // 사진 전부 처리
+  const nameAt = i => names[i] || photoStem(photos[i]);   // 명단 없으면 파일명 사용
+  const faceScale = parseFloat($('faceScale').value);
+  const barRatio = parseFloat($('barRatio').value);
+  const bright = parseFloat($('bright').value);
+  setStatus('얼굴 인식 모델 불러오는 중…', true);
+  await ensureModel();
+  // 이름표 폰트(Pretendard ExtraBold)·띠 이미지를 미리 로드
+  try{ await document.fonts.load('800 80px "Pretendard"'); await document.fonts.ready; }catch(e){}
+  tagImg = await tagImgP;
+  const fromFile = Math.max(0, n - names.length);   // 파일명으로 채워지는 개수
+  if(names.length && fromFile)
+    setStatus(`명단 ${names.length}명 · 나머지 ${fromFile}장은 파일명을 이름으로 사용합니다.`, true);
+
+  // 1차: 색·밝기 맞춤용 배경 측정 → 공통 목표 톤 계산
+  let gains = new Array(n).fill(null);
+  if($('ccOn').checked){
+    const strength = parseFloat($('ccStrength').value);
+    setStatus('색·밝기 분석 중…', true);
+    const bgs=[];
+    for(let i=0;i<n;i++){ bgs.push(measureBg(await loadImg(photos[i].url))); }
+    const targetL = bgs.reduce((s,b)=>s+b.lum,0) / bgs.length;   // 배경 평균 밝기를 목표로
+    for(let i=0;i<n;i++) gains[i]=computeGain(bgs[i], targetL, strength);
+  }
+
+  cards=[];
+  for(let i=0;i<n;i++){
+    setStatus(`만드는 중… ${i+1}/${n}`, true);
+    const det = await detectFace(photos[i]);                 // 검출 1회 (캐시)
+    const c = composeCard(det, nameAt(i), faceScale, barRatio, 0,0,0, gains[i], bright);
+    // 카드별 재생성(이동·회전·이름수정·색보정·밝기)에 필요한 정보 저장
+    c.det=det; c.seq=i+1; c.photo=photos[i]; c.faceScale=faceScale; c.faceScale0=faceScale; c.barRatio=barRatio; c.panX=0; c.panY=0; c.rot=0; c.gain=gains[i]; c.bright=bright;
+    cards.push(c);
+  }
+  render();
+  const noFace = cards.filter(c=>!c.faceFound).length;
+  const modelMsg = modelReady ? '' : ' · ⚠️ 얼굴 인식 모델 로드 실패 — 중앙 크롭으로 처리됨';
+  setStatus(`완료 · ${n}장 생성${noFace?` · 얼굴 미검출 ${noFace}장(중앙 크롭)`:''}${modelMsg}`, false);
+  $('zip').disabled = false;
+  $('sheet').disabled = false;
+};
+
+function render(){
+  const box=$('results'); box.innerHTML='';
+  if(!cards.length){ box.innerHTML='<div class="empty">결과가 여기에 표시됩니다.</div>'; return; }
+  cards.forEach(c=>{
+    const el=document.createElement('div'); el.className='item';
+    el.innerHTML=`<div class="imgwrap">${c.faceFound?'':'<span class="badge">얼굴 미검출</span>'}<span class="adjtag" style="display:none"></span>
+        <img alt=""></div>
+      <div class="meta">
+        <div class="nmrow"><input class="nm" type="text" spellcheck="false" title="이름 클릭해서 수정"><div class="seq">#${String(c.seq).padStart(2,'0')}</div></div>
+        <div class="pad">
+          <div class="prow">
+            <button class="bb" data-mv="L" title="왼쪽">←</button>
+            <button class="bb" data-mv="U" title="위로(올림)">↑</button>
+            <button class="bb" data-mv="D" title="아래로(머리 위 공간↑)">↓</button>
+            <button class="bb" data-mv="R" title="오른쪽">→</button>
+          </div>
+          <div class="prow">
+            <button class="bb" data-z="0.05" title="확대">＋</button>
+            <button class="bb" data-z="-0.05" title="축소">－</button>
+            <button class="bb" data-rot="-3" title="왼쪽 회전 3°">⟲</button>
+            <button class="bb" data-rot="3" title="오른쪽 회전 3°">⟳</button>
+          </div>
+        </div>
+        <button class="dl">저장</button>
+      </div>`;
+    c._img = el.querySelector('img');
+    c._tag = el.querySelector('.adjtag');
+    const nmInput=el.querySelector('.nm'); nmInput.value=c.name;
+    nmInput.onchange=()=>renameCard(c, nmInput.value);
+    nmInput.onkeydown=e=>{ if(e.key==='Enter') nmInput.blur(); };
+    el.querySelectorAll('[data-mv]').forEach(b=> b.onclick=()=>adjustMove(c, b.dataset.mv));
+    el.querySelectorAll('[data-z]').forEach(b=> b.onclick=()=>adjustZoom(c, parseFloat(b.dataset.z)));
+    el.querySelectorAll('[data-rot]').forEach(b=> b.onclick=()=>adjustRot(c, parseInt(b.dataset.rot,10)));
+    el.querySelector('.dl').onclick=()=>downloadOne(c);
+    box.appendChild(el);
+    updateCardDom(c);   // 이미지·태그 채우기
+  });
+}
+function tagText(c){
+  const t=[];
+  if(c.panX||c.panY) t.push('이동');
+  if(c.faceScale0!=null && Math.abs(c.faceScale-c.faceScale0)>1e-6) t.push(`크기${c.faceScale.toFixed(2)}`);
+  if(c.rot) t.push(`${c.rot>0?'+':''}${c.rot}°`);
+  return t.join(' ');
+}
+// 해당 카드 한 장의 화면만 갱신 (전체 재렌더 X → 빠름)
+function updateCardDom(c){
+  if(!c._img){ render(); return; }
+  c._img.src = c.canvas.toDataURL('image/png');
+  if(c._tag){ const tt=tagText(c); c._tag.textContent=tt; c._tag.style.display = tt?'':'none'; }
+}
+const MOVE_STEP = 12;   // 한 번 누를 때 이동량(출력px)
+// 카드 한 장 다시 합성 (검출 캐시 재사용 → 즉시)
+function reRender(c){
+  const nc = composeCard(c.det, c.name, c.faceScale, c.barRatio, c.panX||0, c.panY||0, (c.rot||0)*Math.PI/180, c.gain, c.bright);
+  c.canvas = nc.canvas; c.faceFound = nc.faceFound;
+  updateCardDom(c);
+}
+function adjustMove(c, dir){
+  const cl=(v)=>Math.max(-500, Math.min(500, v));
+  if(dir==='U') c.panY = cl((c.panY||0) - MOVE_STEP);
+  if(dir==='D') c.panY = cl((c.panY||0) + MOVE_STEP);
+  if(dir==='L') c.panX = cl((c.panX||0) - MOVE_STEP);
+  if(dir==='R') c.panX = cl((c.panX||0) + MOVE_STEP);
+  reRender(c, '이동');
+}
+function adjustRot(c, dd){
+  c.rot = Math.max(-30, Math.min(30, (c.rot||0) + dd));
+  reRender(c, '회전');
+}
+function adjustZoom(c, delta){
+  c.faceScale = Math.max(0.6, Math.min(1.8, +((c.faceScale||1) + delta).toFixed(2)));
+  reRender(c, '크기 조정');
+}
+function renameCard(c, name){
+  name = (name||'').trim();
+  if(!name || name===c.name) return;
+  c.name = name;
+  reRender(c, '이름 수정');
+}
+function sanitizeName(s){ return (s||'').replace(/[\\/:*?"<>|]/g,'_').trim() || '이름없음'; }
+function fileName(c){ return `${sanitizeName(c.name)}.png`; }   // 번호 없이 이름만
+
+// ---- PNG DPI 고정 (pHYs 청크 삽입) ----
+const PNG_DPI = 96;
+const CRC_TABLE = (()=>{ const t=new Uint32Array(256);
+  for(let n=0;n<256;n++){ let c=n; for(let k=0;k<8;k++) c = (c&1)?(0xEDB88320^(c>>>1)):(c>>>1); t[n]=c>>>0; } return t; })();
+function crc32(buf){ let c=0xFFFFFFFF;
+  for(let i=0;i<buf.length;i++) c = CRC_TABLE[(c^buf[i])&0xFF] ^ (c>>>8); return (c^0xFFFFFFFF)>>>0; }
+function pngChunk(type, data){
+  const out=new Uint8Array(12+data.length), dv=new DataView(out.buffer);
+  dv.setUint32(0, data.length);
+  for(let i=0;i<4;i++) out[4+i]=type.charCodeAt(i);
+  out.set(data, 8);
+  dv.setUint32(8+data.length, crc32(out.subarray(4, 8+data.length)));
+  return out;
+}
+function setPngDpi(bytes, dpi){
+  const ppu = Math.round(dpi/0.0254);            // 1미터당 픽셀 수 (96dpi → 3780)
+  const data=new Uint8Array(9), dv=new DataView(data.buffer);
+  dv.setUint32(0, ppu); dv.setUint32(4, ppu); data[8]=1;   // 단위=미터
+  const phys=pngChunk('pHYs', data);
+  const ihdrEnd=8+25;                             // 서명(8)+IHDR(25) 뒤에 삽입
+  const out=new Uint8Array(bytes.length+phys.length);
+  out.set(bytes.subarray(0, ihdrEnd), 0);
+  out.set(phys, ihdrEnd);
+  out.set(bytes.subarray(ihdrEnd), ihdrEnd+phys.length);
+  return out;
+}
+async function pngBlobWithDpi(canvas, dpi){
+  const blob=await new Promise(r=>canvas.toBlob(r,'image/png'));
+  const out=setPngDpi(new Uint8Array(await blob.arrayBuffer()), dpi);
+  return new Blob([out], {type:'image/png'});
+}
+
+async function downloadOne(c){
+  const b=await pngBlobWithDpi(c.canvas, PNG_DPI);
+  const a=document.createElement('a'); a.href=URL.createObjectURL(b); a.download=fileName(c);
+  a.click(); URL.revokeObjectURL(a.href);
+}
+$('zip').onclick = async ()=>{
+  setStatus('ZIP 묶는 중…', true);
+  const zip=new JSZip();
+  const used=new Map();
+  for(const c of cards){
+    let fn=fileName(c);
+    if(used.has(fn)){ const k=used.get(fn)+1; used.set(fn,k); fn=`${fn.slice(0,-4)}(${k}).png`; }  // 동명이인 구분
+    else used.set(fn,1);
+    const blob=await pngBlobWithDpi(c.canvas, PNG_DPI);
+    zip.file(fn, blob);
+  }
+  const out=await zip.generateAsync({type:'blob'});
+  const a=document.createElement('a'); a.href=URL.createObjectURL(out);
+  a.download='OT_이름표.zip'; a.click(); URL.revokeObjectURL(a.href);
+  setStatus(`완료 · ${cards.length}장 ZIP 저장`, false);
+};
+
+// ---- 전체 한 장(인쇄용 모음) ----
+const MONTAGE_MAXW = 2000;   // 가로 최대 픽셀
+const MONTAGE_DPI  = 300;    // 인쇄용 고해상도(작게 인쇄해도 선명)
+function gridDims(n){ const cols=Math.ceil(n/5); return {cols, rows:Math.ceil(n/cols)}; }  // 5행 기준
+$('sheet').onclick = async ()=>{
+  if(!cards.length) return;
+  setStatus('전체 한 장 이미지 만드는 중…', true);
+  const sorted = cards.slice().sort((a,b)=> a.name.localeCompare(b.name,'ko'));   // 가나다순
+  const n=sorted.length, {cols, rows}=gridDims(n);
+  const cellW=Math.floor(MONTAGE_MAXW/cols);
+  const gap=Math.max(4, Math.round(cellW*0.04)), inner=cellW-gap;
+  const W=cellW*cols, H=cellW*rows;
+  const cv=document.createElement('canvas'); cv.width=W; cv.height=H;
+  const g=cv.getContext('2d'); g.imageSmoothingQuality='high';
+  g.fillStyle='#fff'; g.fillRect(0,0,W,H);
+  for(let i=0;i<n;i++){
+    const r=Math.floor(i/cols), c=i%cols;
+    g.drawImage(sorted[i].canvas, c*cellW+gap/2, r*cellW+gap/2, inner, inner);
+  }
+  const blob0=await new Promise(res=>cv.toBlob(res,'image/png'));
+  const out=setPngDpi(new Uint8Array(await blob0.arrayBuffer()), MONTAGE_DPI);
+  const a=document.createElement('a'); a.href=URL.createObjectURL(new Blob([out],{type:'image/png'}));
+  a.download='OT_이름표_모음.png'; a.click(); URL.revokeObjectURL(a.href);
+  setStatus(`완료 · 전체 ${n}명 한 장 (${cols}×${rows} · ${W}×${H}px · ${MONTAGE_DPI}DPI)`, false);
+};
+function setStatus(t,busy){ const s=$('status'); s.textContent=t; s.className='status'+(busy?' busy':''); }
+</script>
+
+<script>
+// ============================================================
+//  이름표 탭 — 90×60mm 남색·골드 베이스 + 팀 색(그로스/밸류)
+//  개별 PNG / A4 8장 PDF (외부 라이브러리 없이 직접 생성)
+// ============================================================
+(function(){
+  const $ = id => document.getElementById(id);
+
+  // ---- 탭 전환 ----
+  document.querySelectorAll('.tab').forEach(t=>{
+    t.onclick = ()=>{
+      document.querySelectorAll('.tab').forEach(x=>x.classList.remove('active'));
+      t.classList.add('active');
+      document.querySelectorAll('.pane').forEach(p=>p.hidden = true);
+      $('pane-'+t.dataset.pane).hidden = false;
+    };
+  });
+
+  const NM_W = 1063, NM_H = 709;     // 90 × 60mm @ 300dpi
+  const TEAMS = {
+    growth: { name:'그로스', c1:'#27ad63', c2:'#178a47' },
+    value:  { name:'밸류',  c1:'#e0473f', c2:'#b5271f' },
+  };
+  let selTeam = 'growth';
+  let ntCards = [];                  // {name, team, gisu, canvas}
+
+  const ntStatus = (t,b)=>{ const s=$('ntStatus'); s.textContent=t; s.className='status'+(b?' busy':''); };
+  const ntNameList = ()=> $('ntNames').value.split(/[\n,]+/).map(s=>s.replace(/\s+/g,' ').trim()).filter(Boolean);
+
+  // ---- 팀 선택 ----
+  document.querySelectorAll('.teambtn').forEach(b=>{
+    b.onclick = ()=>{
+      document.querySelectorAll('.teambtn').forEach(x=>x.classList.remove('active'));
+      b.classList.add('active'); selTeam = b.dataset.team;
+    };
+  });
+
+  function refreshNt(){
+    const n = ntNameList().length, g = $('ntGisu').value.trim();
+    $('ntRun').disabled  = !(n && g);
+    $('ntPdf').disabled  = !ntCards.length;
+    $('ntClear').disabled= !ntCards.length;
+    $('ntNameCount').textContent = n
+      ? `${n}명 대기 · '만들기'를 누르면 선택한 팀 색으로 아래에 추가됩니다.`
+      : "이름 뒤에 자동으로 '프로'가 붙습니다. '만들기'를 누르면 선택한 팀 색으로 아래에 추가됩니다.";
+  }
+  $('ntNames').oninput = refreshNt;
+  $('ntGisu').oninput  = refreshNt;
+
+  function roundRectPath(g,x,y,w,h,r){
+    g.beginPath();
+    g.moveTo(x+r,y);
+    g.arcTo(x+w,y,x+w,y+h,r); g.arcTo(x+w,y+h,x,y+h,r);
+    g.arcTo(x,y+h,x,y,r);     g.arcTo(x,y,x+w,y,r);
+    g.closePath();
+  }
+  function goldFrame(g,x,y,w,h,r){
+    const gold=g.createLinearGradient(x,y,x+w,y+h);
+    gold.addColorStop(0,'#9d7a2f'); gold.addColorStop(.5,'#f1db8c'); gold.addColorStop(1,'#9d7a2f');
+    g.strokeStyle=gold;
+    g.lineWidth=Math.max(2.5,w*0.0042);
+    roundRectPath(g,x,y,w,h,r); g.stroke();
+    const ins=Math.max(6,w*0.013);
+    g.lineWidth=Math.max(1,w*0.0018);
+    roundRectPath(g,x+ins,y+ins,w-2*ins,h-2*ins,Math.max(3,r-ins)); g.stroke();
+  }
+
+  // ---- 이름표 한 장 그리기 ----
+  function renderNametag(name, team, gisu){
+    const W=NM_W, H=NM_H, t=TEAMS[team]||TEAMS.growth;
+    const cv=document.createElement('canvas'); cv.width=W; cv.height=H;
+    const g=cv.getContext('2d');
+    const setFont=(w,px)=>g.font=`${w} ${px}px "Pretendard","Apple SD Gothic Neo",sans-serif`;
+    const R=0;                          // 각진 모서리 (자를 때 짜투리 없음)
+
+    // 1) 남색 본체
+    g.save();
+    const navy=g.createLinearGradient(0,0,0,H);
+    navy.addColorStop(0,'#15273f'); navy.addColorStop(1,'#0a1424');
+    g.fillStyle=navy; g.fillRect(0,0,W,H);
+
+    // 프레임(골드 테두리) 안쪽 영역
+    const FM=Math.round(W*0.028);
+    const fx=FM, fy=FM, fw=W-2*FM, fh=H-2*FM;
+    const FR=0;
+    const bandH=Math.round(fh*0.24);    // 상단 팀 띠
+
+    // 2) 상단 팀 띠
+    g.save();
+    roundRectPath(g,fx,fy,fw,fh,FR); g.clip();
+    const tb=g.createLinearGradient(fx,fy,fx+fw,fy);
+    tb.addColorStop(0,t.c1); tb.addColorStop(1,t.c2);
+    g.fillStyle=tb; g.fillRect(fx,fy,fw,bandH);
+    const sh=g.createLinearGradient(0,fy,0,fy+bandH);
+    sh.addColorStop(0,'rgba(255,255,255,0.18)'); sh.addColorStop(1,'rgba(255,255,255,0)');
+    g.fillStyle=sh; g.fillRect(fx,fy,fw,bandH);
+    g.restore();
+    // 띠 아래 골드 구분선
+    g.strokeStyle='#caa54e'; g.lineWidth=Math.max(1.5,W*0.0020);
+    g.beginPath(); g.moveTo(fx,fy+bandH); g.lineTo(fx+fw,fy+bandH); g.stroke();
+
+    // 3) 골드 이중 테두리
+    goldFrame(g,fx,fy,fw,fh,FR);
+
+    // 4) 띠 문구: 엘리트클럽 N기 (고정 · 팀 구분은 띠 색으로)
+    g.fillStyle='#ffffff'; g.textAlign='center'; g.textBaseline='middle'; g.letterSpacing='0px';
+    const bt=`엘리트클럽 ${gisu}기`;
+    let bs=Math.round(bandH*0.54);
+    setFont(700,bs); while(g.measureText(bt).width>fw*0.82 && bs>10){ bs-=2; setFont(700,bs); }
+    g.fillText(bt, W/2, fy+bandH/2 + bs*0.02);
+
+    // 5) 이름(크게) + 프로(작게, 골드)
+    const nm=(name||'').trim(), suf='프로';
+    const areaTop=fy+bandH, areaBot=fy+fh, cy=(areaTop+areaBot)/2;
+    let fs=Math.round(fh*0.44);
+    const measure=()=>{
+      setFont(700,fs); g.letterSpacing=Math.round(fs*0.06)+'px';
+      const nw=g.measureText(nm).width;
+      const sf=Math.round(fs*0.42); setFont(600,sf); g.letterSpacing='0px';
+      const sw=g.measureText(suf).width, gap=Math.round(fs*0.12);
+      return {nw,sw,sf,gap,total:nw+gap+sw};
+    };
+    let m=measure(); while(m.total>fw*0.84 && fs>20){ fs-=4; m=measure(); }
+    const startX=(W-m.total)/2, baseY=cy+fs*0.34;
+    g.textAlign='left'; g.textBaseline='alphabetic';
+    setFont(700,fs); g.letterSpacing=Math.round(fs*0.06)+'px'; g.fillStyle='#ffffff';
+    g.fillText(nm, startX, baseY);
+    setFont(600,m.sf); g.letterSpacing='0px'; g.fillStyle='#e7cd83';
+    g.fillText(suf, startX+m.nw+m.gap, baseY);
+
+    g.restore();
+    return cv;
+  }
+
+  // ---- 만들기 (선택한 팀 색으로 추가) ----
+  $('ntRun').onclick = async ()=>{
+    const names=ntNameList(), gisu=$('ntGisu').value.trim();
+    if(!names.length || !gisu) return;
+    ntStatus('폰트 불러오는 중…', true);
+    try{ await document.fonts.load('700 80px "Pretendard"'); await document.fonts.load('600 60px "Pretendard"'); await document.fonts.ready; }catch(e){}
+    for(let i=0;i<names.length;i++){
+      ntStatus(`만드는 중… ${i+1}/${names.length}`, true);
+      ntCards.push({name:names[i], team:selTeam, gisu, canvas:renderNametag(names[i], selTeam, gisu)});
+    }
+    $('ntNames').value='';
+    renderNt(); refreshNt();
+    ntStatus(`완료 · 총 ${ntCards.length}장`, false);
+  };
+
+  function renderNt(){
+    const box=$('ntResults'); box.innerHTML='';
+    if(!ntCards.length){ box.innerHTML='<div class="empty">결과가 여기에 표시됩니다.</div>'; return; }
+    ntCards.forEach((c,idx)=>{
+      const el=document.createElement('div'); el.className='ntitem';
+      el.innerHTML=`<div class="imgwrap"><img alt=""></div>
+        <div class="meta">
+          <span class="tt ${c.team}">${TEAMS[c.team].name}</span>
+          <input class="nm" type="text" spellcheck="false" title="이름 클릭해서 수정">
+          <button class="dl">저장</button>
+          <button class="rm" title="삭제">✕</button>
+        </div>`;
+      const img=el.querySelector('img'); img.src=c.canvas.toDataURL('image/png');
+      const nm=el.querySelector('.nm'); nm.value=c.name;
+      nm.onchange=()=>{ const v=nm.value.trim(); if(v){ c.name=v; c.canvas=renderNametag(v,c.team,c.gisu); img.src=c.canvas.toDataURL('image/png'); } };
+      nm.onkeydown=e=>{ if(e.key==='Enter') nm.blur(); };
+      el.querySelector('.dl').onclick=()=>downloadNt(c);
+      el.querySelector('.rm').onclick=()=>{ ntCards.splice(idx,1); renderNt(); refreshNt(); };
+      box.appendChild(el);
+    });
+  }
+
+  function sani(s){ return (s||'').replace(/[\\/:*?"<>|]/g,'_').trim()||'이름표'; }
+  async function downloadNt(c){
+    const b=await pngBlobWithDpi(c.canvas, 300);   // 첫 스크립트의 전역 함수 재사용
+    const a=document.createElement('a'); a.href=URL.createObjectURL(b);
+    a.download=`${c.gisu}기_${TEAMS[c.team].name}_${sani(c.name)}.png`; a.click(); URL.revokeObjectURL(a.href);
+  }
+
+  $('ntClear').onclick = ()=>{
+    if(!ntCards.length) return;
+    ntCards=[]; renderNt(); refreshNt();
+    ntStatus('전체 지웠습니다. 기수와 명단을 입력해 주세요.', false);
+  };
+
+  // ---- A4 PDF (8장/장, 모서리 커팅 표식) ----
+  $('ntPdf').onclick = async ()=>{
+    if(!ntCards.length) return;
+    ntStatus('PDF 만드는 중…', true);
+    try{
+      const bytes=await buildNametagPDF(ntCards);
+      const a=document.createElement('a');
+      a.href=URL.createObjectURL(new Blob([bytes],{type:'application/pdf'}));
+      a.download=`엘리트클럽_${ntCards[0].gisu}기_이름표.pdf`; a.click(); URL.revokeObjectURL(a.href);
+      ntStatus(`완료 · ${ntCards.length}장 · A4 ${Math.ceil(ntCards.length/8)}장`, false);
+    }catch(e){ ntStatus('PDF 생성 오류: '+e.message, false); }
+  };
+
+  async function buildNametagPDF(cards){
+    const MM=72/25.4;                       // 1mm → pt
+    const PW=595.28, PH=841.89;             // A4 (pt)
+    const cardW=90*MM, cardH=60*MM;
+    const marginX=10*MM, gapX=10*MM, marginY=13.5*MM, gapY=10*MM;
+    const perPage=8;
+
+    const cell=idx=>{                       // 페이지 내 0~7 → 좌하단 좌표(pt)
+      const col=idx%2, row=Math.floor(idx/2);
+      const x=marginX+col*(cardW+gapX);
+      const yTop=marginY+row*(cardH+gapY);
+      return {x, y:PH-yTop-cardH};
+    };
+    const marks=(x,y,w,h)=>{                 // 네 모서리 ㄱ자 표식
+      const off=1.2*MM, ml=3*MM; let s='';
+      const C=[[x,y,-1,-1],[x+w,y,1,-1],[x,y+h,-1,1],[x+w,y+h,1,1]];
+      for(const [cx,cy,sx,sy] of C){
+        s+=`${(cx+sx*off).toFixed(2)} ${cy.toFixed(2)} m ${(cx+sx*(off+ml)).toFixed(2)} ${cy.toFixed(2)} l S\n`;
+        s+=`${cx.toFixed(2)} ${(cy+sy*off).toFixed(2)} m ${cx.toFixed(2)} ${(cy+sy*(off+ml)).toFixed(2)} l S\n`;
+      }
+      return s;
+    };
+
+    // 각 이름표를 JPEG로 (PDF 기본 지원 형식)
+    const jpegs=[];
+    for(const c of cards){
+      const blob=await new Promise(r=>c.canvas.toBlob(r,'image/jpeg',0.92));
+      jpegs.push(new Uint8Array(await blob.arrayBuffer()));
+    }
+
+    const enc=new TextEncoder();
+    const pageCount=Math.ceil(cards.length/perPage);
+    let num=0; const next=()=>++num;
+    const CAT=next(), PAGES=next();
+    const pageData=[], pageObjs=[];
+    for(let p=0;p<pageCount;p++){
+      const imgsOnPage=[];
+      for(let i=0;i<perPage;i++){ const gi=p*perPage+i; if(gi<cards.length) imgsOnPage.push(gi); }
+      const imgNums=imgsOnPage.map(()=>next());
+      const contentNum=next(), pageNum=next();
+      pageData.push({imgsOnPage,imgNums,contentNum,pageNum});
+      pageObjs.push(pageNum);
+    }
+
+    const bodies=new Array(num+1);
+    bodies[CAT]=[enc.encode(`${CAT} 0 obj\n<< /Type /Catalog /Pages ${PAGES} 0 R >>\nendobj\n`)];
+    bodies[PAGES]=[enc.encode(`${PAGES} 0 obj\n<< /Type /Pages /Kids [ ${pageObjs.map(n=>n+' 0 R').join(' ')} ] /Count ${pageCount} >>\nendobj\n`)];
+
+    for(const pd of pageData){
+      pd.imgsOnPage.forEach((gi,k)=>{
+        const jp=jpegs[gi], inum=pd.imgNums[k];
+        const head=enc.encode(`${inum} 0 obj\n<< /Type /XObject /Subtype /Image /Width ${NM_W} /Height ${NM_H} /ColorSpace /DeviceRGB /BitsPerComponent 8 /Filter /DCTDecode /Length ${jp.length} >>\nstream\n`);
+        bodies[inum]=[head, jp, enc.encode(`\nendstream\nendobj\n`)];
+      });
+      let cs='0.55 0.55 0.55 RG 0.5 w\n';
+      pd.imgsOnPage.forEach((gi,k)=>{
+        const {x,y}=cell(k);
+        cs+=`q ${cardW.toFixed(2)} 0 0 ${cardH.toFixed(2)} ${x.toFixed(2)} ${y.toFixed(2)} cm /Im${k} Do Q\n`;
+        cs+=marks(x,y,cardW,cardH);
+      });
+      const csb=enc.encode(cs);
+      bodies[pd.contentNum]=[enc.encode(`${pd.contentNum} 0 obj\n<< /Length ${csb.length} >>\nstream\n`), csb, enc.encode(`\nendstream\nendobj\n`)];
+      const xobj=pd.imgNums.map((n,k)=>`/Im${k} ${n} 0 R`).join(' ');
+      bodies[pd.pageNum]=[enc.encode(`${pd.pageNum} 0 obj\n<< /Type /Page /Parent ${PAGES} 0 R /MediaBox [0 0 ${PW} ${PH}] /Resources << /XObject << ${xobj} >> >> /Contents ${pd.contentNum} 0 R >>\nendobj\n`)];
+    }
+
+    const chunks=[]; let len=0; const offsets=new Array(num+1).fill(0);
+    const push=u=>{ chunks.push(u); len+=u.length; };
+    push(enc.encode('%PDF-1.3\n'));
+    push(new Uint8Array([0x25,0xE2,0xE3,0xCF,0xD3,0x0A]));
+    for(let n=1;n<=num;n++){ offsets[n]=len; for(const part of bodies[n]) push(part); }
+    const xrefStart=len;
+    let xref=`xref\n0 ${num+1}\n0000000000 65535 f \n`;
+    for(let n=1;n<=num;n++){ xref+=String(offsets[n]).padStart(10,'0')+' 00000 n \n'; }
+    xref+=`trailer\n<< /Size ${num+1} /Root ${CAT} 0 R >>\nstartxref\n${xrefStart}\n%%EOF\n`;
+    push(enc.encode(xref));
+
+    const out=new Uint8Array(len); let off=0;
+    for(const c of chunks){ out.set(c,off); off+=c.length; }
+    return out;
+  }
+})();
+</script>
+</body>
+</html>
