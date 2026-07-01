@@ -802,8 +802,8 @@ function setStatus(t,busy){ const s=$('status'); s.textContent=t; s.className='s
       const yTop=marginY+row*(cardH+gapY);
       return {x, y:PH-yTop-cardH};
     };
-    const marks=(x,y,w,h)=>{                 // 네 모서리 ㄱ자 표식
-      const off=1.2*MM, ml=3*MM; let s='';
+    const marks=(x,y,w,h)=>{                 // 네 모서리 ㄱ자 표식 (재단기용, 진하고 길게)
+      const off=0.8*MM, ml=6*MM; let s='';
       const C=[[x,y,-1,-1],[x+w,y,1,-1],[x,y+h,-1,1],[x+w,y+h,1,1]];
       for(const [cx,cy,sx,sy] of C){
         s+=`${(cx+sx*off).toFixed(2)} ${cy.toFixed(2)} m ${(cx+sx*(off+ml)).toFixed(2)} ${cy.toFixed(2)} l S\n`;
@@ -843,7 +843,7 @@ function setStatus(t,busy){ const s=$('status'); s.textContent=t; s.className='s
         const head=enc.encode(`${inum} 0 obj\n<< /Type /XObject /Subtype /Image /Width ${NM_W} /Height ${NM_H} /ColorSpace /DeviceRGB /BitsPerComponent 8 /Filter /DCTDecode /Length ${jp.length} >>\nstream\n`);
         bodies[inum]=[head, jp, enc.encode(`\nendstream\nendobj\n`)];
       });
-      let cs='0.55 0.55 0.55 RG 0.5 w\n';
+      let cs='0.15 0.15 0.15 RG 1.1 w\n';    // 진한 회색·굵게 (재단기 칼날 맞추기 쉽게)
       pd.imgsOnPage.forEach((gi,k)=>{
         const {x,y}=cell(k);
         cs+=`q ${cardW.toFixed(2)} 0 0 ${cardH.toFixed(2)} ${x.toFixed(2)} ${y.toFixed(2)} cm /Im${k} Do Q\n`;
