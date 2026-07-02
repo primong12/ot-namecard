@@ -199,7 +199,7 @@
     </div>
     <div class="bar">
       <button class="btn-primary" id="ntRun" disabled>이름표 만들기</button>
-      <button class="btn-ghost" id="ntPdf" disabled>A4 PDF 저장 (6장씩)</button>
+      <button class="btn-ghost" id="ntPdf" disabled>A4 PDF 저장 (4장씩)</button>
       <button class="btn-ghost" id="ntClear" disabled>전체 지우기</button>
       <span class="status" id="ntStatus">기수와 명단을 입력해 주세요.</span>
     </div>
@@ -785,18 +785,34 @@ function setStatus(t,busy){ const s=$('status'); s.textContent=t; s.className='s
       const a=document.createElement('a');
       a.href=URL.createObjectURL(new Blob([bytes],{type:'application/pdf'}));
       a.download=`엘리트클럽_${ntCards[0].gisu}기_이름표.pdf`; a.click(); URL.revokeObjectURL(a.href);
-      ntStatus(`완료 · ${ntCards.length}장 · A4 ${Math.ceil(ntCards.length/6)}장`, false);
+      ntStatus(`완료 · ${ntCards.length}장 · A4 ${Math.ceil(ntCards.length/4)}장`, false);
     }catch(e){ ntStatus('PDF 생성 오류: '+e.message, false); }
   };
 
   async function buildNametagPDF(cards){
     const MM=72/25.4;                       // 1mm → pt
-    const PW=595.28, PH=841.89;             // A4 세로 (pt)
-    // 이름표(가로 109×70)를 90° 세워서 3열×2행 = 6장. 좌우 간격 0(재단선 공유)
-    const cw=70*MM, ch=109*MM;              // 페이지 위 한 칸: 폭70 × 높이109
-    const cols=3, rows=2, perPage=6;
-    const blockH=rows*ch;
-    const topMargin=(PH-blockH)/2;          // 위아래 여백(가운데 정렬)
+    const PW=841.89, PH=595.28;             // A4 가로(landscape) (pt)
+    // 이름표(가로 109×70) 똑바로 2열×2행 = 4장, 사방 여백 넉넉 (테두리 안 잘리게)
+    const cardW=109*MM, cardH=70*MM;
+    const cols=2, rows=2, perPage=4;
+    const gapX=25*MM, gapY=20*MM;
+    const marginX=(PW-cols*cardW-(cols-1)*gapX)/2;   // 가운데 정렬
+    const marginY=(PH-rows*cardH-(rows-1)*gapY)/2;
+    const cell=idx=>{
+      const c=idx%cols, r=Math.floor(idx/cols);
+      const x=marginX+c*(cardW+gapX);
+      const yTop=marginY+r*(cardH+gapY);
+      return {x, y:PH-yTop-cardH};
+    };
+    const marks=(x,y,w,h)=>{                 // 네 모서리 ㄱ자 표식 (진하고 길게, 카드 밖 여백에)
+      const off=0.8*MM, ml=6*MM; let s='';
+      const C=[[x,y,-1,-1],[x+w,y,1,-1],[x,y+h,-1,1],[x+w,y+h,1,1]];
+      for(const [cx,cy,sx,sy] of C){
+        s+=`${(cx+sx*off).toFixed(2)} ${cy.toFixed(2)} m ${(cx+sx*(off+ml)).toFixed(2)} ${cy.toFixed(2)} l S\n`;
+        s+=`${cx.toFixed(2)} ${(cy+sy*off).toFixed(2)} m ${cx.toFixed(2)} ${(cy+sy*(off+ml)).toFixed(2)} l S\n`;
+      }
+      return s;
+    };
 
     // 각 이름표를 JPEG로 (PDF 기본 지원 형식)
     const jpegs=[];
@@ -829,21 +845,12 @@ function setStatus(t,busy){ const s=$('status'); s.textContent=t; s.className='s
         const head=enc.encode(`${inum} 0 obj\n<< /Type /XObject /Subtype /Image /Width ${NM_W} /Height ${NM_H} /ColorSpace /DeviceRGB /BitsPerComponent 8 /Filter /DCTDecode /Length ${jp.length} >>\nstream\n`);
         bodies[inum]=[head, jp, enc.encode(`\nendstream\nendobj\n`)];
       });
-      let cs='';
-      // 이미지를 90° 회전해 각 칸에 배치 (cm = 0 A -B 0 E F)
+      let cs='0.13 0.13 0.13 RG 1.2 w\n';    // 진한 회색·굵게 (작두 재단용)
       pd.imgsOnPage.forEach((gi,k)=>{
-        const c=k%cols, r=Math.floor(k/cols);
-        const px=c*cw, py=PH-(topMargin+r*ch)-ch;
-        const A=ch, B=cw, E=px+cw, F=py;
-        cs+=`q 0 ${A.toFixed(2)} ${(-B).toFixed(2)} 0 ${E.toFixed(2)} ${F.toFixed(2)} cm /Im${k} Do Q\n`;
+        const {x,y}=cell(k);
+        cs+=`q ${cardW.toFixed(2)} 0 0 ${cardH.toFixed(2)} ${x.toFixed(2)} ${y.toFixed(2)} cm /Im${k} Do Q\n`;
+        cs+=marks(x,y,cardW,cardH);
       });
-      // 재단선: 페이지를 관통하는 진하고 굵은 실선 (작두 재단용)
-      cs+='0.13 0.13 0.13 RG 1.2 w\n';
-      const yTopPt=PH-topMargin, yBotPt=PH-topMargin-blockH, ext=6*MM;
-      for(let kx=1;kx<cols;kx++){ const x=(kx*cw).toFixed(2);   // 세로 재단선(안쪽 열 경계)
-        cs+=`${x} ${(yTopPt+ext).toFixed(2)} m ${x} ${(yBotPt-ext).toFixed(2)} l S\n`; }
-      for(let ky=0;ky<=rows;ky++){ const y=(yTopPt-ky*ch).toFixed(2);  // 가로 재단선(행 경계·상하)
-        cs+=`0 ${y} m ${PW.toFixed(2)} ${y} l S\n`; }
       const csb=enc.encode(cs);
       bodies[pd.contentNum]=[enc.encode(`${pd.contentNum} 0 obj\n<< /Length ${csb.length} >>\nstream\n`), csb, enc.encode(`\nendstream\nendobj\n`)];
       const xobj=pd.imgNums.map((n,k)=>`/Im${k} ${n} 0 R`).join(' ');
