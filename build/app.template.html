@@ -199,7 +199,7 @@
     </div>
     <div class="bar">
       <button class="btn-primary" id="ntRun" disabled>이름표 만들기</button>
-      <button class="btn-ghost" id="ntPdf" disabled>A4 PDF 저장 (8장씩)</button>
+      <button class="btn-ghost" id="ntPdf" disabled>A4 PDF 저장 (6장씩)</button>
       <button class="btn-ghost" id="ntClear" disabled>전체 지우기</button>
       <span class="status" id="ntStatus">기수와 명단을 입력해 주세요.</span>
     </div>
@@ -610,7 +610,7 @@ function setStatus(t,busy){ const s=$('status'); s.textContent=t; s.className='s
     };
   });
 
-  const NM_W = 1063, NM_H = 709;     // 90 × 60mm @ 300dpi
+  const NM_W = 1287, NM_H = 827;     // 109 × 70mm @ 300dpi
   const TEAMS = {
     growth: { name:'그로스', c1:'#27ad63', c2:'#178a47' },
     value:  { name:'밸류',  c1:'#e0473f', c2:'#b5271f' },
@@ -785,32 +785,18 @@ function setStatus(t,busy){ const s=$('status'); s.textContent=t; s.className='s
       const a=document.createElement('a');
       a.href=URL.createObjectURL(new Blob([bytes],{type:'application/pdf'}));
       a.download=`엘리트클럽_${ntCards[0].gisu}기_이름표.pdf`; a.click(); URL.revokeObjectURL(a.href);
-      ntStatus(`완료 · ${ntCards.length}장 · A4 ${Math.ceil(ntCards.length/8)}장`, false);
+      ntStatus(`완료 · ${ntCards.length}장 · A4 ${Math.ceil(ntCards.length/6)}장`, false);
     }catch(e){ ntStatus('PDF 생성 오류: '+e.message, false); }
   };
 
   async function buildNametagPDF(cards){
     const MM=72/25.4;                       // 1mm → pt
-    const PW=595.28, PH=841.89;             // A4 (pt)
-    const cardW=90*MM, cardH=60*MM;
-    const marginX=10*MM, gapX=10*MM, marginY=13.5*MM, gapY=10*MM;
-    const perPage=8;
-
-    const cell=idx=>{                       // 페이지 내 0~7 → 좌하단 좌표(pt)
-      const col=idx%2, row=Math.floor(idx/2);
-      const x=marginX+col*(cardW+gapX);
-      const yTop=marginY+row*(cardH+gapY);
-      return {x, y:PH-yTop-cardH};
-    };
-    const marks=(x,y,w,h)=>{                 // 네 모서리 ㄱ자 표식 (재단기용, 진하고 길게)
-      const off=0.8*MM, ml=6*MM; let s='';
-      const C=[[x,y,-1,-1],[x+w,y,1,-1],[x,y+h,-1,1],[x+w,y+h,1,1]];
-      for(const [cx,cy,sx,sy] of C){
-        s+=`${(cx+sx*off).toFixed(2)} ${cy.toFixed(2)} m ${(cx+sx*(off+ml)).toFixed(2)} ${cy.toFixed(2)} l S\n`;
-        s+=`${cx.toFixed(2)} ${(cy+sy*off).toFixed(2)} m ${cx.toFixed(2)} ${(cy+sy*(off+ml)).toFixed(2)} l S\n`;
-      }
-      return s;
-    };
+    const PW=595.28, PH=841.89;             // A4 세로 (pt)
+    // 이름표(가로 109×70)를 90° 세워서 3열×2행 = 6장. 좌우 간격 0(재단선 공유)
+    const cw=70*MM, ch=109*MM;              // 페이지 위 한 칸: 폭70 × 높이109
+    const cols=3, rows=2, perPage=6;
+    const blockH=rows*ch;
+    const topMargin=(PH-blockH)/2;          // 위아래 여백(가운데 정렬)
 
     // 각 이름표를 JPEG로 (PDF 기본 지원 형식)
     const jpegs=[];
@@ -843,12 +829,21 @@ function setStatus(t,busy){ const s=$('status'); s.textContent=t; s.className='s
         const head=enc.encode(`${inum} 0 obj\n<< /Type /XObject /Subtype /Image /Width ${NM_W} /Height ${NM_H} /ColorSpace /DeviceRGB /BitsPerComponent 8 /Filter /DCTDecode /Length ${jp.length} >>\nstream\n`);
         bodies[inum]=[head, jp, enc.encode(`\nendstream\nendobj\n`)];
       });
-      let cs='0.15 0.15 0.15 RG 1.1 w\n';    // 진한 회색·굵게 (재단기 칼날 맞추기 쉽게)
+      let cs='';
+      // 이미지를 90° 회전해 각 칸에 배치 (cm = 0 A -B 0 E F)
       pd.imgsOnPage.forEach((gi,k)=>{
-        const {x,y}=cell(k);
-        cs+=`q ${cardW.toFixed(2)} 0 0 ${cardH.toFixed(2)} ${x.toFixed(2)} ${y.toFixed(2)} cm /Im${k} Do Q\n`;
-        cs+=marks(x,y,cardW,cardH);
+        const c=k%cols, r=Math.floor(k/cols);
+        const px=c*cw, py=PH-(topMargin+r*ch)-ch;
+        const A=ch, B=cw, E=px+cw, F=py;
+        cs+=`q 0 ${A.toFixed(2)} ${(-B).toFixed(2)} 0 ${E.toFixed(2)} ${F.toFixed(2)} cm /Im${k} Do Q\n`;
       });
+      // 재단선: 페이지를 관통하는 진하고 굵은 실선 (작두 재단용)
+      cs+='0.13 0.13 0.13 RG 1.2 w\n';
+      const yTopPt=PH-topMargin, yBotPt=PH-topMargin-blockH, ext=6*MM;
+      for(let kx=1;kx<cols;kx++){ const x=(kx*cw).toFixed(2);   // 세로 재단선(안쪽 열 경계)
+        cs+=`${x} ${(yTopPt+ext).toFixed(2)} m ${x} ${(yBotPt-ext).toFixed(2)} l S\n`; }
+      for(let ky=0;ky<=rows;ky++){ const y=(yTopPt-ky*ch).toFixed(2);  // 가로 재단선(행 경계·상하)
+        cs+=`0 ${y} m ${PW.toFixed(2)} ${y} l S\n`; }
       const csb=enc.encode(cs);
       bodies[pd.contentNum]=[enc.encode(`${pd.contentNum} 0 obj\n<< /Length ${csb.length} >>\nstream\n`), csb, enc.encode(`\nendstream\nendobj\n`)];
       const xobj=pd.imgNums.map((n,k)=>`/Im${k} ${n} 0 R`).join(' ');
