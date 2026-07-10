@@ -217,7 +217,7 @@
       <div class="card field">
         <label>기수</label>
         <select class="nt-gisu"></select>
-        <p class="hint" style="margin-top:10px">목걸이 명찰 · 97 × 121mm (세로)<br>하단 기수 구분 띠: 1기 <b style="color:#e0473f">빨</b> · 2기 <b style="color:#ef8c2f">주</b> · 3기 <b style="color:#d4b012">노</b> · 4기 <b style="color:#27ad63">초</b> · 5기 <b style="color:#2f6fd0">파</b> · 6기 <b style="color:#3a3f8f">남</b> · 7기 <b style="color:#7d4bc4">보</b> (순환) · 게스트 <b style="color:#8a92a6">회</b></p>
+        <p class="hint" style="margin-top:10px">목걸이 명찰 · 97 × 121mm (세로)<br>하단 기수 구분 띠: 1기 <b style="color:#e0473f">빨</b> · 2기 <b style="color:#ef8c2f">주</b> · 3기 <b style="color:#d4b012">노</b> · 4기 <b style="color:#27ad63">초</b> · 5기 <b style="color:#2f6fd0">파</b> · 6기 <b style="color:#3a3f8f">남</b> · 7기 <b style="color:#7d4bc4">보</b> (순환) · 게스트 <b style="color:#8a92a6">회</b> · STAFF <b style="color:#c9a856">금</b></p>
       </div>
       <div class="card field">
         <label>이름 명단</label>
@@ -239,7 +239,7 @@
       <div class="card field">
         <label>기수</label>
         <select class="nt-gisu"></select>
-        <p class="hint" style="margin-top:10px">스탠드 이름표 · 200 × 75mm (가로, 크기 추후 변경)<br>하단 기수 구분 띠: 1기 <b style="color:#e0473f">빨</b> · 2기 <b style="color:#ef8c2f">주</b> · 3기 <b style="color:#d4b012">노</b> · 4기 <b style="color:#27ad63">초</b> · 5기 <b style="color:#2f6fd0">파</b> · 6기 <b style="color:#3a3f8f">남</b> · 7기 <b style="color:#7d4bc4">보</b> (순환) · 게스트 <b style="color:#8a92a6">회</b></p>
+        <p class="hint" style="margin-top:10px">스탠드 이름표 · 200 × 75mm (가로, 크기 추후 변경)<br>하단 기수 구분 띠: 1기 <b style="color:#e0473f">빨</b> · 2기 <b style="color:#ef8c2f">주</b> · 3기 <b style="color:#d4b012">노</b> · 4기 <b style="color:#27ad63">초</b> · 5기 <b style="color:#2f6fd0">파</b> · 6기 <b style="color:#3a3f8f">남</b> · 7기 <b style="color:#7d4bc4">보</b> (순환) · 게스트 <b style="color:#8a92a6">회</b> · STAFF <b style="color:#c9a856">금</b></p>
       </div>
       <div class="card field">
         <label>이름 명단</label>
@@ -672,12 +672,14 @@ function setStatus(t,busy){ const s=$('status'); s.textContent=t; s.className='s
   const logoP = loadImg(LOGO_SRC);        // loadImg 는 첫 스크립트의 전역
   let logoImg = null; logoP.then(i=>{ logoImg = i; });
 
-  // 기수 구분 띠 색 — 무지개 7색 순환(빨·주·노·초·파·남·보), 게스트는 회색
+  // 기수 구분 띠 색 — 무지개 7색 순환(빨·주·노·초·파·남·보), 게스트는 회색, STAFF는 금색
   const GUEST_COLOR = '#8a92a6';
+  const STAFF_COLOR = '#c9a856';
   const RAINBOW = ['#e0473f','#ef8c2f','#e6b800','#27ad63','#2f6fd0','#3a3f8f','#7d4bc4'];
-  const gisuLabel = g => (g==='guest' ? '게스트' : `${g}기`);
+  const gisuLabel = g => g==='guest' ? '게스트' : g==='staff' ? 'STAFF' : `${g}기`;
   function gisuColor(g){
     if(g==='guest') return GUEST_COLOR;
+    if(g==='staff') return STAFF_COLOR;
     const n=parseInt(g,10);
     return (n>=1) ? RAINBOW[(n-1)%7] : GUEST_COLOR;
   }
@@ -954,7 +956,7 @@ function setStatus(t,busy){ const s=$('status'); s.textContent=t; s.className='s
 
     // 기수 드롭다운 채우기 (게스트 + 1기~100기, 기본 5기)
     if(fmt.gisuBand && gisuEl.tagName==='SELECT'){
-      let opts='<option value="guest">게스트</option>';
+      let opts='<option value="guest">게스트</option><option value="staff">STAFF</option>';
       for(let i=1;i<=100;i++) opts+=`<option value="${i}"${i===5?' selected':''}>${i}기</option>`;
       gisuEl.innerHTML=opts;
     }
