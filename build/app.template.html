@@ -11,6 +11,7 @@
   @font-face{font-family:'Pretendard';font-weight:800;font-style:normal;font-display:swap;src:url(__FONT_SRC__) format('woff2');}
   @font-face{font-family:'Pretendard';font-weight:700;font-style:normal;font-display:swap;src:url(__FONT_BOLD__) format('woff2');}
   @font-face{font-family:'Pretendard';font-weight:600;font-style:normal;font-display:swap;src:url(__FONT_SEMIBOLD__) format('woff2');}
+  @font-face{font-family:'GreatVibes';font-weight:400;font-style:normal;font-display:swap;src:url(__FONT_SCRIPT__) format('woff2');}
   :root{
     --ink:#1a2238; --ink-soft:#5a6582; --line:#e3e7f0; --bg:#f6f7fb;
     --panel:#ffffff; --accent:#2f4ad0; --accent-soft:#eef1fd;
@@ -690,7 +691,7 @@ function setStatus(t,busy){ const s=$('status'); s.textContent=t; s.className='s
   //  draw     : 카드 한 장 그리는 함수 (name, team, gisu, W, H) → canvas
   const FORMATS = {
     nametag: { key:'nametag', W:1287, H:827,  cardWmm:109, cardHmm:70,  orient:'landscape', cols:2, rows:2, gapX:25, gapY:20, fileTag:'엘리트_이름표', teams:true,  gisuBand:false, draw:renderTag },
-    lanyard: { key:'lanyard', W:1146, H:1429, cardWmm:97,  cardHmm:121, orient:'portrait',  cols:2, rows:2, gapX:8,  gapY:16, fileTag:'목걸이_명찰',  teams:false, gisuBand:true,  draw:renderBadge },
+    lanyard: { key:'lanyard', W:1146, H:1429, cardWmm:97,  cardHmm:121, orient:'portrait',  cols:2, rows:2, gapX:8,  gapY:16, fileTag:'목걸이_명찰',  teams:false, gisuBand:true,  draw:renderLanyard },
     stand:   { key:'stand',   W:2362, H:886,  cardWmm:200, cardHmm:75,  orient:'portrait',  cols:1, rows:3, gapX:0,  gapY:16, fileTag:'스탠드_이름표', teams:false, gisuBand:true,  draw:renderBadge },
   };
 
@@ -839,6 +840,87 @@ function setStatus(t,busy){ const s=$('status'); s.textContent=t; s.className='s
     return cv;
   }
 
+  // ---- 목걸이 명찰 (신규 디자인 · 참고: 세로 종이비표) ----
+  //  남색 배경 + 은은한 금장 패턴 + 위·아래 금장 장식 테두리
+  //  기수색 선 · 필기체 행사명(고정) · 큰 이름 · 이름 아래 기수(흰색)
+  function renderLanyard(name, team, gisu, W, H){
+    const cv=document.createElement('canvas'); cv.width=W; cv.height=H;
+    const g=cv.getContext('2d');
+    const S=Math.min(W,H), cx=W/2;
+    const GCOL='#c9a856';
+    const PRE='"Pretendard","Apple SD Gothic Neo",sans-serif';
+    const SCRIPT='"GreatVibes","Pretendard",cursive';
+    const setFont=(fam,w,px)=>g.font=`${w} ${px}px ${fam}`;
+    const goldGrad=(x,y,x2,y2)=>{ const gd=g.createLinearGradient(x,y,x2,y2);
+      gd.addColorStop(0,'#9d7a2f'); gd.addColorStop(.5,'#f1db8c'); gd.addColorStop(1,'#9d7a2f'); return gd; };
+
+    // 1) 남색 배경
+    const navy=g.createLinearGradient(0,0,0,H);
+    navy.addColorStop(0,'#1c2e4c'); navy.addColorStop(1,'#0f1c31');
+    g.fillStyle=navy; g.fillRect(0,0,W,H);
+
+    // 2) 은은한 금장 패턴 (다이아몬드 격자 + 사이 점)
+    g.save();
+    g.fillStyle=GCOL;
+    const step=Math.round(S*0.12), ds=step*0.16;
+    for(let y=step*0.5;y<H;y+=step) for(let x=step*0.5;x<W;x+=step){
+      g.globalAlpha=0.07;
+      g.beginPath(); g.moveTo(x,y-ds); g.lineTo(x+ds,y); g.lineTo(x,y+ds); g.lineTo(x-ds,y); g.closePath(); g.fill();
+      g.globalAlpha=0.05;
+      g.beginPath(); g.arc(x+step/2, y+step/2, S*0.006, 0, Math.PI*2); g.fill();
+    }
+    g.restore();
+
+    // 3) 금장 이중 테두리
+    const FM=Math.round(S*0.055);
+    const fx=FM, fy=FM, fw=W-2*FM, fh=H-2*FM;
+    g.strokeStyle=goldGrad(fx,fy,fx+fw,fy+fh); g.lineWidth=Math.max(2,S*0.006);
+    g.strokeRect(fx,fy,fw,fh);
+    const ins=Math.round(S*0.016);
+    g.lineWidth=Math.max(1,S*0.0022);
+    g.strokeRect(fx+ins,fy+ins,fw-2*ins,fh-2*ins);
+
+    // 4) 위·아래 금장 장식 (양옆 선 + 가운데 마름모 + 끝 점)
+    const ornament=(yc)=>{
+      const half=fw*0.34, dd=S*0.018;
+      g.strokeStyle=goldGrad(cx-half,yc,cx+half,yc); g.lineWidth=Math.max(1.4,S*0.0032);
+      g.beginPath(); g.moveTo(cx-half,yc); g.lineTo(cx-dd*2.2,yc); g.moveTo(cx+dd*2.2,yc); g.lineTo(cx+half,yc); g.stroke();
+      g.fillStyle=GCOL;
+      g.beginPath(); g.moveTo(cx,yc-dd); g.lineTo(cx+dd,yc); g.lineTo(cx,yc+dd); g.lineTo(cx-dd,yc); g.closePath(); g.fill();
+      [cx-half,cx+half].forEach(px=>{ g.beginPath(); g.arc(px,yc,S*0.0085,0,Math.PI*2); g.fill(); });
+    };
+    ornament(fy+ins+Math.round(fh*0.05));
+    ornament(fy+fh-ins-Math.round(fh*0.05));
+
+    // 5) 기수색 짧은 선 (참고: KOREA 위 빨간선 → 기수 구분 색)
+    const lineY=fy+fh*0.31;
+    g.strokeStyle=gisuColor(gisu); g.lineWidth=Math.max(3,S*0.009);
+    g.beginPath(); g.moveTo(cx-fw*0.11,lineY); g.lineTo(cx+fw*0.11,lineY); g.stroke();
+
+    // 6) 필기체 행사명 (고정 문구)
+    g.fillStyle='#ece7d8'; g.textAlign='center'; g.textBaseline='middle'; g.letterSpacing='0px';
+    const title='Elite Club 1st Private Night';
+    let ss=Math.round(fh*0.088); setFont(SCRIPT,400,ss);
+    while(g.measureText(title).width>fw*0.90 && ss>14){ ss-=2; setFont(SCRIPT,400,ss); }
+    g.fillText(title, cx, fy+fh*0.385);
+
+    // 7) 이름 (크게, 흰색 · 음절 띄어쓰기, 외자 두 칸)
+    const t=(name||'').trim(), chars=[...t];
+    const disp = chars.length===2 ? chars[0]+'  '+chars[1] : chars.join(' ');
+    let fs=Math.round(fh*0.17), ls;
+    do{ ls=Math.round(fs*0.01); setFont(PRE,800,fs); g.letterSpacing=ls+'px';
+        if(g.measureText(disp).width<=fw*0.90 || fs<=24) break; fs-=4; }while(true);
+    g.fillStyle='#ffffff'; g.fillText(disp, cx+ls/2, fy+fh*0.55);
+    g.letterSpacing='0px';
+
+    // 8) 기수 표기 (이름 아래, 흰색)
+    let gs=Math.round(fh*0.052), gls=Math.round(gs*0.22);
+    setFont(PRE,600,gs); g.letterSpacing=gls+'px'; g.fillStyle='#ffffff';
+    g.fillText(gisuLabel(gisu), cx+gls/2, fy+fh*0.655);
+    g.letterSpacing='0px';
+    return cv;
+  }
+
   function sani(s){ return (s||'').replace(/[\\/:*?"<>|]/g,'_').trim()||'이름표'; }
 
   // ---- 한 포맷(=한 탭) 배선 ----
@@ -894,7 +976,7 @@ function setStatus(t,busy){ const s=$('status'); s.textContent=t; s.className='s
       const names=nameList(), gisu=gisuEl.value.trim();
       if(!names.length || !gisu) return;
       setStatus('폰트·로고 불러오는 중…', true);
-      try{ await document.fonts.load('800 80px "Pretendard"'); await document.fonts.load('700 80px "Pretendard"'); await document.fonts.load('600 60px "Pretendard"'); await document.fonts.ready; }catch(e){}
+      try{ await document.fonts.load('800 80px "Pretendard"'); await document.fonts.load('700 80px "Pretendard"'); await document.fonts.load('600 60px "Pretendard"'); await document.fonts.load('400 60px "GreatVibes"'); await document.fonts.ready; }catch(e){}
       if(fmt.gisuBand){ try{ logoImg = await logoP; }catch(e){} }
       for(let i=0;i<names.length;i++){
         setStatus(`만드는 중… ${i+1}/${names.length}`, true);
