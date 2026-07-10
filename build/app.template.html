@@ -841,8 +841,8 @@ function setStatus(t,busy){ const s=$('status'); s.textContent=t; s.className='s
   }
 
   // ---- 목걸이 명찰 (신규 디자인 · 참고: 세로 종이비표) ----
-  //  남색 배경 + 은은한 금장 패턴 + 위·아래 금장 장식 테두리
-  //  기수색 선 · 필기체 행사명(고정) · 큰 이름 · 이름 아래 기수(흰색)
+  //  남색 배경 + 은은한 금장 패턴 + 금장 테두리 + 상단 로고
+  //  기수색 선 · 필기체 행사명(고정) · 큰 이름 · 기수(흰색, 큼) · 맨 하단 기수색 바
   function renderLanyard(name, team, gisu, W, H){
     const cv=document.createElement('canvas'); cv.width=W; cv.height=H;
     const g=cv.getContext('2d');
@@ -871,52 +871,65 @@ function setStatus(t,busy){ const s=$('status'); s.textContent=t; s.className='s
     }
     g.restore();
 
-    // 3) 금장 이중 테두리
-    const FM=Math.round(S*0.055);
-    const fx=FM, fy=FM, fw=W-2*FM, fh=H-2*FM;
-    g.strokeStyle=goldGrad(fx,fy,fx+fw,fy+fh); g.lineWidth=Math.max(2,S*0.006);
+    // 3) 맨 하단 기수색 바 (풀블리드)
+    const BH=Math.round(H*0.072);
+    g.fillStyle=gisuColor(gisu); g.fillRect(0, H-BH, W, BH);
+
+    // 4) 금장 이중 테두리 (바 위 본문 영역을 감쌈)
+    const FM=Math.round(S*0.05);
+    const fx=FM, fy=FM, fw=W-2*FM;
+    const fby=H-BH-Math.round(S*0.028);
+    const fh=fby-fy;
+    g.strokeStyle=goldGrad(fx,fy,fx+fw,fby); g.lineWidth=Math.max(2,S*0.006);
     g.strokeRect(fx,fy,fw,fh);
     const ins=Math.round(S*0.016);
     g.lineWidth=Math.max(1,S*0.0022);
     g.strokeRect(fx+ins,fy+ins,fw-2*ins,fh-2*ins);
 
-    // 4) 위·아래 금장 장식 (양옆 선 + 가운데 마름모 + 끝 점)
+    // 5) 상단 금장 장식 (양옆 선 + 가운데 마름모 + 끝 점)
     const ornament=(yc)=>{
-      const half=fw*0.34, dd=S*0.018;
+      const half=fw*0.34, dd=S*0.017;
       g.strokeStyle=goldGrad(cx-half,yc,cx+half,yc); g.lineWidth=Math.max(1.4,S*0.0032);
       g.beginPath(); g.moveTo(cx-half,yc); g.lineTo(cx-dd*2.2,yc); g.moveTo(cx+dd*2.2,yc); g.lineTo(cx+half,yc); g.stroke();
       g.fillStyle=GCOL;
       g.beginPath(); g.moveTo(cx,yc-dd); g.lineTo(cx+dd,yc); g.lineTo(cx,yc+dd); g.lineTo(cx-dd,yc); g.closePath(); g.fill();
-      [cx-half,cx+half].forEach(px=>{ g.beginPath(); g.arc(px,yc,S*0.0085,0,Math.PI*2); g.fill(); });
+      [cx-half,cx+half].forEach(px=>{ g.beginPath(); g.arc(px,yc,S*0.008,0,Math.PI*2); g.fill(); });
     };
-    ornament(fy+ins+Math.round(fh*0.05));
-    ornament(fy+fh-ins-Math.round(fh*0.05));
+    ornament(fy+ins+Math.round(fh*0.045));
 
-    // 5) 기수색 짧은 선 (참고: KOREA 위 빨간선 → 기수 구분 색)
-    const lineY=fy+fh*0.31;
+    // 6) 엘리트클럽 로고 (상단 가운데)
+    if(logoImg){
+      const maxW=fw*0.46, maxH=fh*0.17;
+      const ar=logoImg.naturalWidth/logoImg.naturalHeight;
+      let lw=maxW, lh=lw/ar; if(lh>maxH){ lh=maxH; lw=lh*ar; }
+      g.drawImage(logoImg, cx-lw/2, fy+fh*0.155-lh/2, lw, lh);
+    }
+
+    // 7) 기수색 짧은 선 (참고: KOREA 위 빨간선 → 기수 구분 색)
+    const lineY=fy+fh*0.315;
     g.strokeStyle=gisuColor(gisu); g.lineWidth=Math.max(3,S*0.009);
     g.beginPath(); g.moveTo(cx-fw*0.11,lineY); g.lineTo(cx+fw*0.11,lineY); g.stroke();
 
-    // 6) 필기체 행사명 (고정 문구)
+    // 8) 필기체 행사명 (고정 문구)
     g.fillStyle='#ece7d8'; g.textAlign='center'; g.textBaseline='middle'; g.letterSpacing='0px';
-    const title='Elite Club 1st Private Night';
-    let ss=Math.round(fh*0.088); setFont(SCRIPT,400,ss);
-    while(g.measureText(title).width>fw*0.90 && ss>14){ ss-=2; setFont(SCRIPT,400,ss); }
+    const title='1st Private Night';
+    let ss=Math.round(fh*0.10); setFont(SCRIPT,400,ss);
+    while(g.measureText(title).width>fw*0.80 && ss>14){ ss-=2; setFont(SCRIPT,400,ss); }
     g.fillText(title, cx, fy+fh*0.385);
 
-    // 7) 이름 (크게, 흰색 · 음절 띄어쓰기, 외자 두 칸)
+    // 9) 이름 (크게, 흰색 · 음절 띄어쓰기, 외자 두 칸)
     const t=(name||'').trim(), chars=[...t];
     const disp = chars.length===2 ? chars[0]+'  '+chars[1] : chars.join(' ');
     let fs=Math.round(fh*0.17), ls;
     do{ ls=Math.round(fs*0.01); setFont(PRE,800,fs); g.letterSpacing=ls+'px';
         if(g.measureText(disp).width<=fw*0.90 || fs<=24) break; fs-=4; }while(true);
-    g.fillStyle='#ffffff'; g.fillText(disp, cx+ls/2, fy+fh*0.55);
+    g.fillStyle='#ffffff'; g.fillText(disp, cx+ls/2, fy+fh*0.53);
     g.letterSpacing='0px';
 
-    // 8) 기수 표기 (이름 아래, 흰색)
-    let gs=Math.round(fh*0.052), gls=Math.round(gs*0.22);
-    setFont(PRE,600,gs); g.letterSpacing=gls+'px'; g.fillStyle='#ffffff';
-    g.fillText(gisuLabel(gisu), cx+gls/2, fy+fh*0.655);
+    // 10) 기수 표기 (이름 아래 · 간격 넉넉 · 더 큼 · 흰색)
+    let gs=Math.round(fh*0.078), gls=Math.round(gs*0.16);
+    setFont(PRE,700,gs); g.letterSpacing=gls+'px'; g.fillStyle='#ffffff';
+    g.fillText(gisuLabel(gisu), cx+gls/2, fy+fh*0.685);
     g.letterSpacing='0px';
     return cv;
   }
