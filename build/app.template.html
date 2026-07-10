@@ -899,39 +899,33 @@ function setStatus(t,busy){ const s=$('status'); s.textContent=t; s.className='s
     };
     ornament(fy+ins+Math.round(fh*0.045));
 
-    // 6) 엘리트클럽 로고 (상단 가운데 · 상단 장식과 충분히 띄움 · 크게)
-    if(logoImg){
-      const maxW=fw*0.66, maxH=fh*0.225;
-      const ar=logoImg.naturalWidth/logoImg.naturalHeight;
-      let lw=maxW, lh=lw/ar; if(lh>maxH){ lh=maxH; lw=lh*ar; }
-      g.drawImage(logoImg, cx-lw/2, fy+fh*0.25-lh/2, lw, lh);
-    }
+    // 6) 상단 클럽·행사명 (로고 대신 필기체 텍스트 · 기수색 선 위)
+    g.textAlign='center'; g.textBaseline='middle'; g.letterSpacing='0px';
+    let es=Math.round(fh*0.125); setFont(SCRIPT,400,es);
+    while(g.measureText('Elite Club').width>fw*0.74 && es>16){ es-=2; setFont(SCRIPT,400,es); }
+    g.fillStyle='#e7cd83'; g.fillText('Elite Club', cx, fy+fh*0.20);
+    let ps=Math.round(fh*0.098); setFont(SCRIPT,400,ps);
+    while(g.measureText('Private Night').width>fw*0.80 && ps>14){ ps-=2; setFont(SCRIPT,400,ps); }
+    g.fillStyle='#ece7d8'; g.fillText('Private Night', cx, fy+fh*0.315);
 
     // 7) 기수색 짧은 선 (참고: KOREA 위 빨간선 → 기수 구분 색)
-    const lineY=fy+fh*0.42;
+    const lineY=fy+fh*0.41;
     g.strokeStyle=gisuColor(gisu); g.lineWidth=Math.max(3,S*0.009);
     g.beginPath(); g.moveTo(cx-fw*0.11,lineY); g.lineTo(cx+fw*0.11,lineY); g.stroke();
 
-    // 8) 필기체 행사명 (고정 문구 · 기수색 선과 충분히 띄움)
-    g.fillStyle='#ece7d8'; g.textAlign='center'; g.textBaseline='middle'; g.letterSpacing='0px';
-    const title='1st Private Night';
-    let ss=Math.round(fh*0.10); setFont(SCRIPT,400,ss);
-    while(g.measureText(title).width>fw*0.80 && ss>14){ ss-=2; setFont(SCRIPT,400,ss); }
-    g.fillText(title, cx, fy+fh*0.52);
-
-    // 9) 이름 (크게, 흰색 · 음절 띄어쓰기, 외자 두 칸 · 행사명과 넉넉히 띄우고 더 아래로)
+    // 8) 이름 (크게, 흰색 · 음절 띄어쓰기, 외자 두 칸)
     const t=(name||'').trim(), chars=[...t];
     const disp = chars.length===2 ? chars[0]+'  '+chars[1] : chars.join(' ');
     let fs=Math.round(fh*0.17), ls;
     do{ ls=Math.round(fs*0.01); setFont(PRE,800,fs); g.letterSpacing=ls+'px';
         if(g.measureText(disp).width<=fw*0.90 || fs<=24) break; fs-=4; }while(true);
-    g.fillStyle='#ffffff'; g.fillText(disp, cx+ls/2, fy+fh*0.73);
+    g.fillStyle='#ffffff'; g.fillText(disp, cx+ls/2, fy+fh*0.58);
     g.letterSpacing='0px';
 
-    // 10) 기수 표기 (이름 아래 · 간격 넉넉 · 더 큼 · 흰색 · 더 아래로)
+    // 9) 기수 표기 (이름 아래 · 흰색 · 큼)
     let gs=Math.round(fh*0.078), gls=Math.round(gs*0.16);
     setFont(PRE,700,gs); g.letterSpacing=gls+'px'; g.fillStyle='#ffffff';
-    g.fillText(gisuLabel(gisu), cx+gls/2, fy+fh*0.90);
+    g.fillText(gisuLabel(gisu), cx+gls/2, fy+fh*0.735);
     g.letterSpacing='0px';
     return cv;
   }
