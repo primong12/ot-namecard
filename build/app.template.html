@@ -897,16 +897,16 @@ function setStatus(t,busy){ const s=$('status'); s.textContent=t; s.className='s
     };
     ornament(fy+ins+Math.round(fh*0.045));
 
-    // 6) 엘리트클럽 로고 (상단 가운데 · 상단 장식과 충분히 띄움)
+    // 6) 엘리트클럽 로고 (상단 가운데 · 상단 장식과 충분히 띄움 · 크게)
     if(logoImg){
-      const maxW=fw*0.44, maxH=fh*0.15;
+      const maxW=fw*0.66, maxH=fh*0.225;
       const ar=logoImg.naturalWidth/logoImg.naturalHeight;
       let lw=maxW, lh=lw/ar; if(lh>maxH){ lh=maxH; lw=lh*ar; }
-      g.drawImage(logoImg, cx-lw/2, fy+fh*0.235-lh/2, lw, lh);
+      g.drawImage(logoImg, cx-lw/2, fy+fh*0.25-lh/2, lw, lh);
     }
 
     // 7) 기수색 짧은 선 (참고: KOREA 위 빨간선 → 기수 구분 색)
-    const lineY=fy+fh*0.40;
+    const lineY=fy+fh*0.42;
     g.strokeStyle=gisuColor(gisu); g.lineWidth=Math.max(3,S*0.009);
     g.beginPath(); g.moveTo(cx-fw*0.11,lineY); g.lineTo(cx+fw*0.11,lineY); g.stroke();
 
@@ -915,21 +915,21 @@ function setStatus(t,busy){ const s=$('status'); s.textContent=t; s.className='s
     const title='1st Private Night';
     let ss=Math.round(fh*0.10); setFont(SCRIPT,400,ss);
     while(g.measureText(title).width>fw*0.80 && ss>14){ ss-=2; setFont(SCRIPT,400,ss); }
-    g.fillText(title, cx, fy+fh*0.50);
+    g.fillText(title, cx, fy+fh*0.52);
 
-    // 9) 이름 (크게, 흰색 · 음절 띄어쓰기, 외자 두 칸 · 더 아래로)
+    // 9) 이름 (크게, 흰색 · 음절 띄어쓰기, 외자 두 칸 · 행사명과 넉넉히 띄우고 더 아래로)
     const t=(name||'').trim(), chars=[...t];
     const disp = chars.length===2 ? chars[0]+'  '+chars[1] : chars.join(' ');
     let fs=Math.round(fh*0.17), ls;
     do{ ls=Math.round(fs*0.01); setFont(PRE,800,fs); g.letterSpacing=ls+'px';
         if(g.measureText(disp).width<=fw*0.90 || fs<=24) break; fs-=4; }while(true);
-    g.fillStyle='#ffffff'; g.fillText(disp, cx+ls/2, fy+fh*0.635);
+    g.fillStyle='#ffffff'; g.fillText(disp, cx+ls/2, fy+fh*0.73);
     g.letterSpacing='0px';
 
     // 10) 기수 표기 (이름 아래 · 간격 넉넉 · 더 큼 · 흰색 · 더 아래로)
     let gs=Math.round(fh*0.078), gls=Math.round(gs*0.16);
     setFont(PRE,700,gs); g.letterSpacing=gls+'px'; g.fillStyle='#ffffff';
-    g.fillText(gisuLabel(gisu), cx+gls/2, fy+fh*0.80);
+    g.fillText(gisuLabel(gisu), cx+gls/2, fy+fh*0.90);
     g.letterSpacing='0px';
     return cv;
   }
