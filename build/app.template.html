@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>OT 이름표 생성기 · 이효석아카데미</title>
+<title>이미지 생성기 · 이효석아카데미</title>
 <!--SHIM_SCRIPT-->
 <!--JSZIP_SCRIPT-->
 <!--FACEAPI_SCRIPT-->
@@ -98,6 +98,9 @@
   .field input[type=number]{width:100%;border:1px solid var(--line);border-radius:10px;padding:12px;
     font-size:15px;font-family:inherit}
   .field input[type=number]:focus{outline:none;border-color:var(--accent)}
+  .field select{width:100%;border:1px solid var(--line);border-radius:10px;padding:12px;
+    font-size:15px;font-family:inherit;background:#fff;cursor:pointer}
+  .field select:focus{outline:none;border-color:var(--accent)}
   .teamsel{display:flex;gap:8px;margin-top:14px}
   .teambtn{flex:1;padding:11px 0;font-size:14px;font-weight:700;border:2px solid var(--line);
     background:#fff;color:var(--ink-soft);border-radius:10px;cursor:pointer;transition:.15s}
@@ -106,7 +109,7 @@
   .teambtn[data-team=value]  .dot{background:#d23b3b}
   .teambtn.active[data-team=growth]{border-color:#1e9e57;background:#e9f7ef;color:#15723f}
   .teambtn.active[data-team=value]{border-color:#d23b3b;background:#fcebea;color:#a3271f}
-  #ntResults{display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:16px;margin-top:8px}
+  .ntres{display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:16px;margin-top:8px}
   .ntitem{background:var(--panel);border:1px solid var(--line);border-radius:12px;overflow:hidden}
   .ntitem .imgwrap{background:#eef0f6;padding:12px}
   .ntitem img{width:100%;display:block;border-radius:6px}
@@ -128,14 +131,15 @@
 <div class="wrap">
   <header>
     <div class="kicker">이효석아카데미 · 엘리트클럽</div>
-    <h1>OT 이름표 생성기</h1>
-    <p class="sub">원본 사진과 이름 명단을 올리면 얼굴 기준으로 1:1 크롭하고 하단에 이름표를 넣어
-      균일한 카드로 만들어 줍니다. 개별 저장과 전체 ZIP 저장을 지원합니다. (인터넷 없이 동작)</p>
+    <h1>이미지 생성기</h1>
+    <p class="sub">사진 혹은 명단을 올리면 해당 이미지를 만들어줍니다. (인터넷 없이 동작)</p>
   </header>
 
   <nav class="tabs">
-    <button class="tab active" data-pane="profile">프로필 만들기</button>
-    <button class="tab" data-pane="nametag">이름표</button>
+    <button class="tab active" data-pane="profile">엘리트클럽 프로필</button>
+    <button class="tab" data-pane="nametag">엘리트 이름표</button>
+    <button class="tab" data-pane="lanyard">목걸이 명찰</button>
+    <button class="tab" data-pane="stand">스탠드 이름표</button>
   </nav>
 
   <div id="pane-profile" class="pane">
@@ -180,11 +184,12 @@
   <div id="results" class="results"><div class="empty">결과가 여기에 표시됩니다.</div></div>
   </div><!-- /pane-profile -->
 
-  <div id="pane-nametag" class="pane" hidden>
+  <!-- 이름표 계열 3종(엘리트 이름표 / 목걸이 명찰 / 스탠드 이름표) — 같은 틀, 크기만 다름 -->
+  <div id="pane-nametag" class="pane nt-pane" hidden>
     <div class="ntgrid">
       <div class="card field">
-        <label for="ntGisu">기수</label>
-        <input type="number" id="ntGisu" min="1" value="5" placeholder="예: 5">
+        <label>기수</label>
+        <input type="number" class="nt-gisu" min="1" value="5" placeholder="예: 5">
         <div class="teamsel">
           <button class="teambtn active" data-team="growth"><span class="dot"></span>그로스</button>
           <button class="teambtn" data-team="value"><span class="dot"></span>밸류</button>
@@ -192,19 +197,63 @@
         <p class="hint" style="margin-top:10px">팀을 고르면 그 팀 색으로 만들어집니다.<br>그로스=초록 · 밸류=빨강</p>
       </div>
       <div class="card field">
-        <label for="ntNames">이름 명단</label>
-        <textarea id="ntNames" placeholder="한 줄에 한 명씩&#10;&#10;최순자&#10;홍길동&#10;강호동"></textarea>
-        <p class="hint" id="ntNameCount">이름 뒤에 자동으로 '프로'가 붙습니다. '만들기'를 누르면 선택한 팀 색으로 아래에 추가됩니다.</p>
+        <label>이름 명단</label>
+        <textarea class="nt-names" placeholder="한 줄에 한 명씩&#10;&#10;최순자&#10;홍길동&#10;강호동"></textarea>
+        <p class="hint nt-namecount">이름 뒤에 자동으로 '프로'가 붙습니다. '만들기'를 누르면 선택한 팀 색으로 아래에 추가됩니다.</p>
       </div>
     </div>
     <div class="bar">
-      <button class="btn-primary" id="ntRun" disabled>이름표 만들기</button>
-      <button class="btn-ghost" id="ntPdf" disabled>A4 PDF 저장 (4장씩)</button>
-      <button class="btn-ghost" id="ntClear" disabled>전체 지우기</button>
-      <span class="status" id="ntStatus">기수와 명단을 입력해 주세요.</span>
+      <button class="btn-primary nt-run" disabled>이름표 만들기</button>
+      <button class="btn-ghost nt-pdf" disabled>A4 PDF 저장</button>
+      <button class="btn-ghost nt-clear" disabled>전체 지우기</button>
+      <span class="status nt-status">기수와 명단을 입력해 주세요.</span>
     </div>
-    <div id="ntResults"><div class="empty">결과가 여기에 표시됩니다.</div></div>
+    <div class="ntres"><div class="empty">결과가 여기에 표시됩니다.</div></div>
   </div><!-- /pane-nametag -->
+
+  <div id="pane-lanyard" class="pane nt-pane" hidden>
+    <div class="ntgrid">
+      <div class="card field">
+        <label>기수</label>
+        <select class="nt-gisu"></select>
+        <p class="hint" style="margin-top:10px">목걸이 명찰 · 97 × 121mm (세로)<br>하단 기수 구분 띠: 1기 <b style="color:#e0473f">빨</b> · 2기 <b style="color:#ef8c2f">주</b> · 3기 <b style="color:#d4b012">노</b> · 4기 <b style="color:#27ad63">초</b> · 5기 <b style="color:#2f6fd0">파</b> · 6기 <b style="color:#3a3f8f">남</b> · 7기 <b style="color:#7d4bc4">보</b> (순환) · 게스트 <b style="color:#8a92a6">회</b></p>
+      </div>
+      <div class="card field">
+        <label>이름 명단</label>
+        <textarea class="nt-names" placeholder="한 줄에 한 명씩&#10;&#10;최순자&#10;홍길동&#10;강호동"></textarea>
+        <p class="hint nt-namecount">이름 뒤에 자동으로 '프로'가 붙습니다. '만들기'를 누르면 선택한 팀 색으로 아래에 추가됩니다.</p>
+      </div>
+    </div>
+    <div class="bar">
+      <button class="btn-primary nt-run" disabled>명찰 만들기</button>
+      <button class="btn-ghost nt-pdf" disabled>A4 PDF 저장</button>
+      <button class="btn-ghost nt-clear" disabled>전체 지우기</button>
+      <span class="status nt-status">기수와 명단을 입력해 주세요.</span>
+    </div>
+    <div class="ntres"><div class="empty">결과가 여기에 표시됩니다.</div></div>
+  </div><!-- /pane-lanyard -->
+
+  <div id="pane-stand" class="pane nt-pane" hidden>
+    <div class="ntgrid">
+      <div class="card field">
+        <label>기수</label>
+        <select class="nt-gisu"></select>
+        <p class="hint" style="margin-top:10px">스탠드 이름표 · 200 × 75mm (가로, 크기 추후 변경)<br>하단 기수 구분 띠: 1기 <b style="color:#e0473f">빨</b> · 2기 <b style="color:#ef8c2f">주</b> · 3기 <b style="color:#d4b012">노</b> · 4기 <b style="color:#27ad63">초</b> · 5기 <b style="color:#2f6fd0">파</b> · 6기 <b style="color:#3a3f8f">남</b> · 7기 <b style="color:#7d4bc4">보</b> (순환) · 게스트 <b style="color:#8a92a6">회</b></p>
+      </div>
+      <div class="card field">
+        <label>이름 명단</label>
+        <textarea class="nt-names" placeholder="한 줄에 한 명씩&#10;&#10;최순자&#10;홍길동&#10;강호동"></textarea>
+        <p class="hint nt-namecount">이름 뒤에 자동으로 '프로'가 붙습니다. '만들기'를 누르면 선택한 팀 색으로 아래에 추가됩니다.</p>
+      </div>
+    </div>
+    <div class="bar">
+      <button class="btn-primary nt-run" disabled>이름표 만들기</button>
+      <button class="btn-ghost nt-pdf" disabled>A4 PDF 저장</button>
+      <button class="btn-ghost nt-clear" disabled>전체 지우기</button>
+      <span class="status nt-status">기수와 명단을 입력해 주세요.</span>
+    </div>
+    <div class="ntres"><div class="empty">결과가 여기에 표시됩니다.</div></div>
+  </div><!-- /pane-stand -->
 </div>
 
 <script>
@@ -594,13 +643,15 @@ function setStatus(t,busy){ const s=$('status'); s.textContent=t; s.className='s
 
 <script>
 // ============================================================
-//  이름표 탭 — 90×60mm 남색·골드 베이스 + 팀 색(그로스/밸류)
-//  개별 PNG / A4 8장 PDF (외부 라이브러리 없이 직접 생성)
+//  이름표 계열 탭 — 남색·골드 베이스 + 팀 색(그로스/밸류)
+//  · 엘리트 이름표 109×70mm / 목걸이 명찰 97×121mm / 스탠드 이름표 200×75mm
+//  · 세 탭은 "포맷(크기·PDF 배치)"만 다르고 동작·그리기 틀은 공용
+//  · 개별 PNG / A4 PDF (외부 라이브러리 없이 직접 생성)
 // ============================================================
 (function(){
   const $ = id => document.getElementById(id);
 
-  // ---- 탭 전환 ----
+  // ---- 탭 전환 (프로필 포함 모든 탭 공용) ----
   document.querySelectorAll('.tab').forEach(t=>{
     t.onclick = ()=>{
       document.querySelectorAll('.tab').forEach(x=>x.classList.remove('active'));
@@ -610,36 +661,38 @@ function setStatus(t,busy){ const s=$('status'); s.textContent=t; s.className='s
     };
   });
 
-  const NM_W = 1287, NM_H = 827;     // 109 × 70mm @ 300dpi
   const TEAMS = {
     growth: { name:'그로스', c1:'#27ad63', c2:'#178a47' },
     value:  { name:'밸류',  c1:'#e0473f', c2:'#b5271f' },
   };
-  let selTeam = 'growth';
-  let ntCards = [];                  // {name, team, gisu, canvas}
 
-  const ntStatus = (t,b)=>{ const s=$('ntStatus'); s.textContent=t; s.className='status'+(b?' busy':''); };
-  const ntNameList = ()=> $('ntNames').value.split(/[\n,]+/).map(s=>s.replace(/\s+/g,' ').trim()).filter(Boolean);
+  // 엘리트클럽 로고(목걸이 명찰·스탠드 이름표 상단) — 내장 data URL, 미리 로드
+  const LOGO_SRC = "__LOGO_SRC__";
+  const logoP = loadImg(LOGO_SRC);        // loadImg 는 첫 스크립트의 전역
+  let logoImg = null; logoP.then(i=>{ logoImg = i; });
 
-  // ---- 팀 선택 ----
-  document.querySelectorAll('.teambtn').forEach(b=>{
-    b.onclick = ()=>{
-      document.querySelectorAll('.teambtn').forEach(x=>x.classList.remove('active'));
-      b.classList.add('active'); selTeam = b.dataset.team;
-    };
-  });
-
-  function refreshNt(){
-    const n = ntNameList().length, g = $('ntGisu').value.trim();
-    $('ntRun').disabled  = !(n && g);
-    $('ntPdf').disabled  = !ntCards.length;
-    $('ntClear').disabled= !ntCards.length;
-    $('ntNameCount').textContent = n
-      ? `${n}명 대기 · '만들기'를 누르면 선택한 팀 색으로 아래에 추가됩니다.`
-      : "이름 뒤에 자동으로 '프로'가 붙습니다. '만들기'를 누르면 선택한 팀 색으로 아래에 추가됩니다.";
+  // 기수 구분 띠 색 — 무지개 7색 순환(빨·주·노·초·파·남·보), 게스트는 회색
+  const GUEST_COLOR = '#8a92a6';
+  const RAINBOW = ['#e0473f','#ef8c2f','#e6b800','#27ad63','#2f6fd0','#3a3f8f','#7d4bc4'];
+  const gisuLabel = g => (g==='guest' ? '게스트' : `${g}기`);
+  function gisuColor(g){
+    if(g==='guest') return GUEST_COLOR;
+    const n=parseInt(g,10);
+    return (n>=1) ? RAINBOW[(n-1)%7] : GUEST_COLOR;
   }
-  $('ntNames').oninput = refreshNt;
-  $('ntGisu').oninput  = refreshNt;
+
+  // 포맷 정의 — 나중에 각 탭 디자인을 따로 손볼 때 draw 함수만 교체하면 됩니다.
+  //  W,H         : 카드 픽셀 크기(300dpi 기준)
+  //  cardWmm/Hmm : 실제 인쇄 크기(mm)  ·  PDF 배치의 기준
+  //  orient/cols/rows/gapX/gapY : A4 한 장에 몇 개를 어떻게 배치할지
+  //  teams    : 그로스/밸류 팀 선택 사용 여부 (엘리트 이름표만 true)
+  //  gisuBand : 기수 선택 + 하단 기수 구분 띠 방식 (목걸이·스탠드)
+  //  draw     : 카드 한 장 그리는 함수 (name, team, gisu, W, H) → canvas
+  const FORMATS = {
+    nametag: { key:'nametag', W:1287, H:827,  cardWmm:109, cardHmm:70,  orient:'landscape', cols:2, rows:2, gapX:25, gapY:20, fileTag:'엘리트_이름표', teams:true,  gisuBand:false, draw:renderTag },
+    lanyard: { key:'lanyard', W:1146, H:1429, cardWmm:97,  cardHmm:121, orient:'portrait',  cols:2, rows:2, gapX:8,  gapY:16, fileTag:'목걸이_명찰',  teams:false, gisuBand:true,  draw:renderBadge },
+    stand:   { key:'stand',   W:2362, H:886,  cardWmm:200, cardHmm:75,  orient:'portrait',  cols:1, rows:3, gapX:0,  gapY:16, fileTag:'스탠드_이름표', teams:false, gisuBand:true,  draw:renderBadge },
+  };
 
   function roundRectPath(g,x,y,w,h,r){
     g.beginPath();
@@ -659,13 +712,14 @@ function setStatus(t,busy){ const s=$('status'); s.textContent=t; s.className='s
     roundRectPath(g,x+ins,y+ins,w-2*ins,h-2*ins,Math.max(3,r-ins)); g.stroke();
   }
 
-  // ---- 이름표 한 장 그리기 ----
-  function renderNametag(name, team, gisu){
-    const W=NM_W, H=NM_H, t=TEAMS[team]||TEAMS.growth;
+  // ---- 카드 한 장 그리기 (크기 무관 · 상대 좌표로 어떤 규격이든 대응) ----
+  //  지금은 세 포맷 모두 이 공용 그림을 씁니다. 나중에 포맷별 디자인이 필요하면
+  //  이 함수를 복제해 renderLanyard / renderStand 로 나누고 FORMATS.render 에 지정하세요.
+  function renderTag(name, team, gisu, W, H){
+    const t=TEAMS[team]||TEAMS.growth;
     const cv=document.createElement('canvas'); cv.width=W; cv.height=H;
     const g=cv.getContext('2d');
     const setFont=(w,px)=>g.font=`${w} ${px}px "Pretendard","Apple SD Gothic Neo",sans-serif`;
-    const R=0;                          // 각진 모서리 (자를 때 짜투리 없음)
 
     // 1) 남색 본체
     g.save();
@@ -673,11 +727,12 @@ function setStatus(t,busy){ const s=$('status'); s.textContent=t; s.className='s
     navy.addColorStop(0,'#15273f'); navy.addColorStop(1,'#0a1424');
     g.fillStyle=navy; g.fillRect(0,0,W,H);
 
-    // 프레임(골드 테두리) 안쪽 영역
-    const FM=Math.round(W*0.028);
+    // 프레임(골드 테두리) 안쪽 영역 — 짧은 변 기준으로 여백을 잡아 세로/가로 모두 자연스럽게
+    const S=Math.min(W,H);
+    const FM=Math.round(S*0.032);
     const fx=FM, fy=FM, fw=W-2*FM, fh=H-2*FM;
-    const FR=0;
-    const bandH=Math.round(fh*0.24);    // 상단 팀 띠
+    const FR=0;                          // 각진 모서리 (자를 때 짜투리 없음)
+    const bandH=Math.round(fh*0.24);     // 상단 팀 띠
 
     // 2) 상단 팀 띠
     g.save();
@@ -690,7 +745,7 @@ function setStatus(t,busy){ const s=$('status'); s.textContent=t; s.className='s
     g.fillStyle=sh; g.fillRect(fx,fy,fw,bandH);
     g.restore();
     // 띠 아래 골드 구분선
-    g.strokeStyle='#caa54e'; g.lineWidth=Math.max(1.5,W*0.0020);
+    g.strokeStyle='#caa54e'; g.lineWidth=Math.max(1.5,S*0.0026);
     g.beginPath(); g.moveTo(fx,fy+bandH); g.lineTo(fx+fw,fy+bandH); g.stroke();
 
     // 3) 골드 이중 테두리
@@ -706,7 +761,7 @@ function setStatus(t,busy){ const s=$('status'); s.textContent=t; s.className='s
     // 5) 이름(크게) + 프로(작게, 골드)
     const nm=(name||'').trim(), suf='프로';
     const areaTop=fy+bandH, areaBot=fy+fh, cy=(areaTop+areaBot)/2;
-    let fs=Math.round(fh*0.44);
+    let fs=Math.round((areaBot-areaTop)*0.5);
     const measure=()=>{
       setFont(700,fs); g.letterSpacing=Math.round(fs*0.06)+'px';
       const nw=g.measureText(nm).width;
@@ -726,76 +781,191 @@ function setStatus(t,busy){ const s=$('status'); s.textContent=t; s.className='s
     return cv;
   }
 
-  // ---- 만들기 (선택한 팀 색으로 추가) ----
-  $('ntRun').onclick = async ()=>{
-    const names=ntNameList(), gisu=$('ntGisu').value.trim();
-    if(!names.length || !gisu) return;
-    ntStatus('폰트 불러오는 중…', true);
-    try{ await document.fonts.load('700 80px "Pretendard"'); await document.fonts.load('600 60px "Pretendard"'); await document.fonts.ready; }catch(e){}
-    for(let i=0;i<names.length;i++){
-      ntStatus(`만드는 중… ${i+1}/${names.length}`, true);
-      ntCards.push({name:names[i], team:selTeam, gisu, canvas:renderNametag(names[i], selTeam, gisu)});
-    }
-    $('ntNames').value='';
-    renderNt(); refreshNt();
-    ntStatus(`완료 · 총 ${ntCards.length}장`, false);
-  };
+  // ---- 목걸이 명찰 / 스탠드 이름표 그리기 (참고 디자인 기반) ----
+  //  상단: 엘리트클럽 로고 · 그 아래 기수 · 골드 구분선 · 큰 이름 · 하단 기수 구분 띠
+  //  team 인자는 쓰지 않습니다(기수 띠로 구분). 크기 무관 상대좌표로 세로/가로 모두 대응.
+  function renderBadge(name, team, gisu, W, H){
+    const cv=document.createElement('canvas'); cv.width=W; cv.height=H;
+    const g=cv.getContext('2d');
+    const setFont=(w,px)=>g.font=`${w} ${px}px "Pretendard","Apple SD Gothic Neo",sans-serif`;
+    const S=Math.min(W,H);
 
-  function renderNt(){
-    const box=$('ntResults'); box.innerHTML='';
-    if(!ntCards.length){ box.innerHTML='<div class="empty">결과가 여기에 표시됩니다.</div>'; return; }
-    ntCards.forEach((c,idx)=>{
-      const el=document.createElement('div'); el.className='ntitem';
-      el.innerHTML=`<div class="imgwrap"><img alt=""></div>
-        <div class="meta">
-          <span class="tt ${c.team}">${TEAMS[c.team].name}</span>
-          <input class="nm" type="text" spellcheck="false" title="이름 클릭해서 수정">
-          <button class="dl">저장</button>
-          <button class="rm" title="삭제">✕</button>
-        </div>`;
-      const img=el.querySelector('img'); img.src=c.canvas.toDataURL('image/png');
-      const nm=el.querySelector('.nm'); nm.value=c.name;
-      nm.onchange=()=>{ const v=nm.value.trim(); if(v){ c.name=v; c.canvas=renderNametag(v,c.team,c.gisu); img.src=c.canvas.toDataURL('image/png'); } };
-      nm.onkeydown=e=>{ if(e.key==='Enter') nm.blur(); };
-      el.querySelector('.dl').onclick=()=>downloadNt(c);
-      el.querySelector('.rm').onclick=()=>{ ntCards.splice(idx,1); renderNt(); refreshNt(); };
-      box.appendChild(el);
-    });
+    // 1) 남색 본체
+    const navy=g.createLinearGradient(0,0,0,H);
+    navy.addColorStop(0,'#1b2c48'); navy.addColorStop(1,'#132138');
+    g.fillStyle=navy; g.fillRect(0,0,W,H);
+
+    // 2) 하단 기수 구분 띠 (풀블리드 · 색은 기수별)
+    const BH=Math.round(H*0.085);
+    g.fillStyle=gisuColor(gisu); g.fillRect(0, H-BH, W, BH);
+
+    // 3) 골드 얇은 테두리 (띠 위 본문 영역을 감쌈)
+    const FM=Math.round(S*0.05);
+    const fx=FM, fy=FM, fw=W-2*FM;
+    const frameBottom=H-BH-Math.round(S*0.035);
+    const fh=frameBottom-fy;
+    const r=Math.round(S*0.018);
+    g.strokeStyle='#c9a856'; g.lineWidth=Math.max(2, S*0.006);
+    roundRectPath(g,fx,fy,fw,fh,r); g.stroke();
+
+    // 4) 로고 (상단 · STAFF 자리)
+    if(logoImg){
+      const maxW=fw*0.62, maxH=fh*0.28;
+      const ar=logoImg.naturalWidth/logoImg.naturalHeight;
+      let lw=maxW, lh=lw/ar; if(lh>maxH){ lh=maxH; lw=lh*ar; }
+      g.drawImage(logoImg, (W-lw)/2, fy+fh*0.20-lh/2, lw, lh);
+    }
+
+    // 5) 기수 (로고 아래)
+    g.fillStyle='#ffffff'; g.textAlign='center'; g.textBaseline='middle'; g.letterSpacing='0px';
+    setFont(600, Math.round(fh*0.085));
+    g.fillText(gisuLabel(gisu), W/2, fy+fh*0.40);
+
+    // 6) 골드 구분선
+    const divY=fy+fh*0.50;
+    g.strokeStyle='#c9a856'; g.lineWidth=Math.max(1.5,S*0.004);
+    g.beginPath(); g.moveTo(fx+fw*0.05, divY); g.lineTo(fx+fw*0.95, divY); g.stroke();
+
+    // 7) 이름 (구분선 아래, 크게) — 외자(두 글자)는 가운데 공백 2칸 ("이  석")
+    const t=(name||'').trim();
+    const disp=(t.length===2 && !/\s/.test(t)) ? t[0]+'  '+t[1] : t;
+    const nameCY=(divY+frameBottom)/2;
+    let fs=Math.round(fh*0.34), ls;
+    do{ ls=Math.round(fs*0.02); setFont(800,fs); g.letterSpacing=ls+'px';
+        if(g.measureText(disp).width<=fw*0.84 || fs<=20) break; fs-=4; }while(true);
+    g.fillStyle='#ffffff'; g.textAlign='center'; g.textBaseline='middle';
+    g.fillText(disp, W/2 + ls/2, nameCY);
+    g.letterSpacing='0px';
+    return cv;
   }
 
   function sani(s){ return (s||'').replace(/[\\/:*?"<>|]/g,'_').trim()||'이름표'; }
-  async function downloadNt(c){
-    const b=await pngBlobWithDpi(c.canvas, 300);   // 첫 스크립트의 전역 함수 재사용
-    const a=document.createElement('a'); a.href=URL.createObjectURL(b);
-    a.download=`${c.gisu}기_${TEAMS[c.team].name}_${sani(c.name)}.png`; a.click(); URL.revokeObjectURL(a.href);
+
+  // ---- 한 포맷(=한 탭) 배선 ----
+  //  teams  방식(엘리트 이름표): 그로스/밸류 팀 선택 · 기수는 숫자 입력
+  //  gisuBand 방식(목걸이·스탠드): 기수 드롭다운(게스트·1~100기) · 하단 기수 띠 색
+  function makeTab(fmt){
+    const pane=$('pane-'+fmt.key);
+    if(!pane) return;
+    const gisuEl  = pane.querySelector('.nt-gisu');
+    const namesEl = pane.querySelector('.nt-names');
+    const runEl   = pane.querySelector('.nt-run');
+    const pdfEl   = pane.querySelector('.nt-pdf');
+    const clearEl = pane.querySelector('.nt-clear');
+    const statusEl= pane.querySelector('.nt-status');
+    const countEl = pane.querySelector('.nt-namecount');
+    const resEl   = pane.querySelector('.ntres');
+    let selTeam='growth', cards=[];
+
+    // 기수 드롭다운 채우기 (게스트 + 1기~100기, 기본 5기)
+    if(fmt.gisuBand && gisuEl.tagName==='SELECT'){
+      let opts='<option value="guest">게스트</option>';
+      for(let i=1;i<=100;i++) opts+=`<option value="${i}"${i===5?' selected':''}>${i}기</option>`;
+      gisuEl.innerHTML=opts;
+    }
+
+    const setStatus=(t,b)=>{ statusEl.textContent=t; statusEl.className='status nt-status'+(b?' busy':''); };
+    const nameList=()=> namesEl.value.split(/[\n,]+/).map(s=>s.replace(/\s+/g,' ').trim()).filter(Boolean);
+    const perPage = fmt.cols*fmt.rows;
+    pdfEl.textContent = `A4 PDF 저장 (한 장에 ${perPage}개)`;
+    // 카드 한 장 그리기 (포맷별 draw 함수)
+    const draw = (name,team,gisu)=> fmt.draw(name, team, gisu, fmt.W, fmt.H);
+    // 파일명·목록 태그에 쓸 구분값 (팀 방식=팀명 · 기수 방식=기수라벨)
+    const tagOf = c => fmt.gisuBand ? gisuLabel(c.gisu) : TEAMS[c.team].name;
+
+    // 팀 선택 (팀 방식일 때만 · 이 탭 안에서만)
+    pane.querySelectorAll('.teambtn').forEach(b=>{
+      b.onclick=()=>{ pane.querySelectorAll('.teambtn').forEach(x=>x.classList.remove('active')); b.classList.add('active'); selTeam=b.dataset.team; };
+    });
+
+    const hintReady = fmt.gisuBand
+      ? "이름 뒤에 자동으로 '프로'가 붙습니다. '만들기'를 누르면 선택한 기수의 띠 색으로 아래에 추가됩니다."
+      : "이름 뒤에 자동으로 '프로'가 붙습니다. '만들기'를 누르면 선택한 팀 색으로 아래에 추가됩니다.";
+    function refresh(){
+      const n=nameList().length, gg=gisuEl.value.trim();
+      runEl.disabled  = !(n && gg);
+      pdfEl.disabled  = !cards.length;
+      clearEl.disabled= !cards.length;
+      countEl.textContent = n ? `${n}명 대기 · '만들기'를 누르면 아래에 추가됩니다.` : hintReady;
+    }
+    namesEl.oninput=refresh; gisuEl.oninput=refresh; gisuEl.onchange=refresh;
+
+    runEl.onclick=async()=>{
+      const names=nameList(), gisu=gisuEl.value.trim();
+      if(!names.length || !gisu) return;
+      setStatus('폰트·로고 불러오는 중…', true);
+      try{ await document.fonts.load('800 80px "Pretendard"'); await document.fonts.load('700 80px "Pretendard"'); await document.fonts.load('600 60px "Pretendard"'); await document.fonts.ready; }catch(e){}
+      if(fmt.gisuBand){ try{ logoImg = await logoP; }catch(e){} }
+      for(let i=0;i<names.length;i++){
+        setStatus(`만드는 중… ${i+1}/${names.length}`, true);
+        cards.push({name:names[i], team:selTeam, gisu, canvas:draw(names[i], selTeam, gisu)});
+      }
+      namesEl.value='';
+      renderCards(); refresh();
+      setStatus(`완료 · 총 ${cards.length}장`, false);
+    };
+
+    function renderCards(){
+      resEl.innerHTML='';
+      if(!cards.length){ resEl.innerHTML='<div class="empty">결과가 여기에 표시됩니다.</div>'; return; }
+      cards.forEach((c,idx)=>{
+        const el=document.createElement('div'); el.className='ntitem';
+        const pill = fmt.gisuBand
+          ? `<span class="tt" style="background:${gisuColor(c.gisu)};color:#fff">${gisuLabel(c.gisu)}</span>`
+          : `<span class="tt ${c.team}">${TEAMS[c.team].name}</span>`;
+        el.innerHTML=`<div class="imgwrap"><img alt=""></div>
+          <div class="meta">
+            ${pill}
+            <input class="nm" type="text" spellcheck="false" title="이름 클릭해서 수정">
+            <button class="dl">저장</button>
+            <button class="rm" title="삭제">✕</button>
+          </div>`;
+        const img=el.querySelector('img'); img.src=c.canvas.toDataURL('image/png');
+        const nm=el.querySelector('.nm'); nm.value=c.name;
+        nm.onchange=()=>{ const v=nm.value.trim(); if(v){ c.name=v; c.canvas=draw(v,c.team,c.gisu); img.src=c.canvas.toDataURL('image/png'); } };
+        nm.onkeydown=e=>{ if(e.key==='Enter') nm.blur(); };
+        el.querySelector('.dl').onclick=()=>downloadOne(c);
+        el.querySelector('.rm').onclick=()=>{ cards.splice(idx,1); renderCards(); refresh(); };
+        resEl.appendChild(el);
+      });
+    }
+
+    async function downloadOne(c){
+      const b=await pngBlobWithDpi(c.canvas, 300);   // 첫 스크립트의 전역 함수 재사용
+      const a=document.createElement('a'); a.href=URL.createObjectURL(b);
+      a.download=`${fmt.fileTag}_${tagOf(c)}_${sani(c.name)}.png`; a.click(); URL.revokeObjectURL(a.href);
+    }
+
+    clearEl.onclick=()=>{
+      if(!cards.length) return;
+      cards=[]; renderCards(); refresh();
+      setStatus('전체 지웠습니다. 기수와 명단을 입력해 주세요.', false);
+    };
+
+    pdfEl.onclick=async()=>{
+      if(!cards.length) return;
+      setStatus('PDF 만드는 중…', true);
+      try{
+        const bytes=await buildTagPDF(cards, fmt);
+        const a=document.createElement('a');
+        a.href=URL.createObjectURL(new Blob([bytes],{type:'application/pdf'}));
+        a.download=`${fmt.fileTag}_${tagOf(cards[0])}.pdf`; a.click(); URL.revokeObjectURL(a.href);
+        setStatus(`완료 · ${cards.length}장 · A4 ${Math.ceil(cards.length/perPage)}장`, false);
+      }catch(e){ setStatus('PDF 생성 오류: '+e.message, false); }
+    };
+
+    refresh();
   }
 
-  $('ntClear').onclick = ()=>{
-    if(!ntCards.length) return;
-    ntCards=[]; renderNt(); refreshNt();
-    ntStatus('전체 지웠습니다. 기수와 명단을 입력해 주세요.', false);
-  };
-
-  // ---- A4 PDF (8장/장, 모서리 커팅 표식) ----
-  $('ntPdf').onclick = async ()=>{
-    if(!ntCards.length) return;
-    ntStatus('PDF 만드는 중…', true);
-    try{
-      const bytes=await buildNametagPDF(ntCards);
-      const a=document.createElement('a');
-      a.href=URL.createObjectURL(new Blob([bytes],{type:'application/pdf'}));
-      a.download=`엘리트클럽_${ntCards[0].gisu}기_이름표.pdf`; a.click(); URL.revokeObjectURL(a.href);
-      ntStatus(`완료 · ${ntCards.length}장 · A4 ${Math.ceil(ntCards.length/4)}장`, false);
-    }catch(e){ ntStatus('PDF 생성 오류: '+e.message, false); }
-  };
-
-  async function buildNametagPDF(cards){
+  // ---- A4 PDF (포맷별 배치 · 모서리 커팅 표식) ----
+  async function buildTagPDF(cards, fmt){
     const MM=72/25.4;                       // 1mm → pt
-    const PW=841.89, PH=595.28;             // A4 가로(landscape) (pt)
-    // 이름표(가로 109×70) 똑바로 2열×2행 = 4장, 사방 여백 넉넉 (테두리 안 잘리게)
-    const cardW=109*MM, cardH=70*MM;
-    const cols=2, rows=2, perPage=4;
-    const gapX=25*MM, gapY=20*MM;
+    const A4S=595.28, A4L=841.89;           // A4 짧은 변 / 긴 변 (pt)
+    const PW = fmt.orient==='landscape' ? A4L : A4S;
+    const PH = fmt.orient==='landscape' ? A4S : A4L;
+    const cardW=fmt.cardWmm*MM, cardH=fmt.cardHmm*MM;
+    const cols=fmt.cols, rows=fmt.rows, perPage=cols*rows;
+    const gapX=fmt.gapX*MM, gapY=fmt.gapY*MM;
     const marginX=(PW-cols*cardW-(cols-1)*gapX)/2;   // 가운데 정렬
     const marginY=(PH-rows*cardH-(rows-1)*gapY)/2;
     const cell=idx=>{
@@ -804,17 +974,21 @@ function setStatus(t,busy){ const s=$('status'); s.textContent=t; s.className='s
       const yTop=marginY+r*(cardH+gapY);
       return {x, y:PH-yTop-cardH};
     };
-    const marks=(x,y,w,h)=>{                 // 네 모서리 ㄱ자 표식 (진하고 길게, 카드 밖 여백에)
-      const off=0.8*MM, ml=6*MM; let s='';
-      const C=[[x,y,-1,-1],[x+w,y,1,-1],[x,y+h,-1,1],[x+w,y+h,1,1]];
-      for(const [cx,cy,sx,sy] of C){
-        s+=`${(cx+sx*off).toFixed(2)} ${cy.toFixed(2)} m ${(cx+sx*(off+ml)).toFixed(2)} ${cy.toFixed(2)} l S\n`;
-        s+=`${cx.toFixed(2)} ${(cy+sy*off).toFixed(2)} m ${cx.toFixed(2)} ${(cy+sy*(off+ml)).toFixed(2)} l S\n`;
-      }
-      return s;
+    // 카드 경계마다 A4 가장자리까지 이어지는 관통 재단선 좌표를 모음
+    //  (세로선 x / 가로선 y). 카드 밑에 먼저 깔아 여백·간격에만 보이게 함.
+    const cutLines=idxs=>{
+      const xs=new Set(), ys=new Set();
+      idxs.forEach(k=>{
+        const c=k%cols, r=Math.floor(k/cols);
+        const left=marginX+c*(cardW+gapX), right=left+cardW;
+        const yTop=marginY+r*(cardH+gapY);
+        xs.add(+left.toFixed(2));  xs.add(+right.toFixed(2));
+        ys.add(+(PH-yTop-cardH).toFixed(2)); ys.add(+(PH-yTop).toFixed(2));
+      });
+      return {xs:[...xs], ys:[...ys]};
     };
 
-    // 각 이름표를 JPEG로 (PDF 기본 지원 형식)
+    // 각 카드를 JPEG로 (PDF 기본 지원 형식)
     const jpegs=[];
     for(const c of cards){
       const blob=await new Promise(r=>c.canvas.toBlob(r,'image/jpeg',0.92));
@@ -842,14 +1016,18 @@ function setStatus(t,busy){ const s=$('status'); s.textContent=t; s.className='s
     for(const pd of pageData){
       pd.imgsOnPage.forEach((gi,k)=>{
         const jp=jpegs[gi], inum=pd.imgNums[k];
-        const head=enc.encode(`${inum} 0 obj\n<< /Type /XObject /Subtype /Image /Width ${NM_W} /Height ${NM_H} /ColorSpace /DeviceRGB /BitsPerComponent 8 /Filter /DCTDecode /Length ${jp.length} >>\nstream\n`);
+        const head=enc.encode(`${inum} 0 obj\n<< /Type /XObject /Subtype /Image /Width ${fmt.W} /Height ${fmt.H} /ColorSpace /DeviceRGB /BitsPerComponent 8 /Filter /DCTDecode /Length ${jp.length} >>\nstream\n`);
         bodies[inum]=[head, jp, enc.encode(`\nendstream\nendobj\n`)];
       });
-      let cs='0.13 0.13 0.13 RG 1.2 w\n';    // 진한 회색·굵게 (작두 재단용)
+      // 1) 관통 재단선 먼저(카드 아래) — A4 끝(0~PW, 0~PH)까지 이어짐, 카드에 가려 여백에만 보임
+      let cs='0.15 0.15 0.15 RG 0.8 w\n';     // 회색·얇게 (작두 재단용)
+      const {xs, ys}=cutLines(pd.imgsOnPage.map((gi,k)=>k));
+      xs.forEach(x=>{ cs+=`${x.toFixed(2)} 0 m ${x.toFixed(2)} ${PH.toFixed(2)} l S\n`; });
+      ys.forEach(y=>{ cs+=`0 ${y.toFixed(2)} m ${PW.toFixed(2)} ${y.toFixed(2)} l S\n`; });
+      // 2) 이미지(재단선 위에 덮음)
       pd.imgsOnPage.forEach((gi,k)=>{
         const {x,y}=cell(k);
         cs+=`q ${cardW.toFixed(2)} 0 0 ${cardH.toFixed(2)} ${x.toFixed(2)} ${y.toFixed(2)} cm /Im${k} Do Q\n`;
-        cs+=marks(x,y,cardW,cardH);
       });
       const csb=enc.encode(cs);
       bodies[pd.contentNum]=[enc.encode(`${pd.contentNum} 0 obj\n<< /Length ${csb.length} >>\nstream\n`), csb, enc.encode(`\nendstream\nendobj\n`)];
@@ -872,6 +1050,11 @@ function setStatus(t,busy){ const s=$('status'); s.textContent=t; s.className='s
     for(const c of chunks){ out.set(c,off); off+=c.length; }
     return out;
   }
+
+  // 세 탭 배선
+  makeTab(FORMATS.nametag);
+  makeTab(FORMATS.lanyard);
+  makeTab(FORMATS.stand);
 })();
 </script>
 </body>

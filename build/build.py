@@ -5,7 +5,7 @@ import base64, json, pathlib, sys
 
 ROOT = pathlib.Path(__file__).resolve().parent.parent
 TPL  = ROOT / "build" / "app.template.html"
-OUT  = ROOT / "ot_namecard_app.html"
+OUT  = ROOT / "HSproduce_app.html"
 
 def read_text(p): return (ROOT / p).read_text(encoding="utf-8")
 def read_b64(p):  return base64.b64encode((ROOT / p).read_bytes()).decode("ascii")
@@ -76,8 +76,11 @@ html = html.replace("__FONT_SEMIBOLD__", f"data:font/woff2;base64,{read_b64('fon
 # 4) 이름표 띠 디자인 이미지 data URL 내장
 html = html.replace("__TAG_SRC__", f"data:image/png;base64,{read_b64('assets/tag.png')}")
 
+# 5) 엘리트클럽 로고(목걸이 명찰·스탠드 이름표용) data URL 내장
+html = html.replace("__LOGO_SRC__", f"data:image/png;base64,{read_b64('assets/logo.png')}")
+
 # 남은 토큰이 없는지 검증
-for token in ("<!--SHIM_SCRIPT-->", "<!--JSZIP_SCRIPT-->", "<!--FACEAPI_SCRIPT-->", "__FONT_SRC__", "__FONT_BOLD__", "__FONT_SEMIBOLD__", "__TAG_SRC__"):
+for token in ("<!--SHIM_SCRIPT-->", "<!--JSZIP_SCRIPT-->", "<!--FACEAPI_SCRIPT-->", "__FONT_SRC__", "__FONT_BOLD__", "__FONT_SEMIBOLD__", "__TAG_SRC__", "__LOGO_SRC__"):
     if token in html:
         sys.exit(f"치환되지 않은 토큰이 남아 있습니다: {token}")
 
