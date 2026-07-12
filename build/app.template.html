@@ -672,6 +672,11 @@ function setStatus(t,busy){ const s=$('status'); s.textContent=t; s.className='s
   const logoP = loadImg(LOGO_SRC);        // loadImg 는 첫 스크립트의 전역
   let logoImg = null; logoP.then(i=>{ logoImg = i; });
 
+  // 목걸이 명찰 배경(파란 기하학) — 내장 data URL, 미리 로드
+  const BG_LANYARD_SRC = "__BG_LANYARD__";
+  const bgLanyardP = loadImg(BG_LANYARD_SRC);
+  let bgLanyardImg = null; bgLanyardP.then(i=>{ bgLanyardImg = i; });
+
   // 기수 구분 띠 색 — 무지개 7색 순환(빨·주·노·초·파·남·보), 게스트는 회색, STAFF는 금색
   const GUEST_COLOR = '#8a92a6';
   const STAFF_COLOR = '#c9a856';
@@ -842,91 +847,60 @@ function setStatus(t,busy){ const s=$('status'); s.textContent=t; s.className='s
     return cv;
   }
 
-  // ---- 목걸이 명찰 (신규 디자인 · 참고: 세로 종이비표) ----
-  //  남색 배경 + 은은한 금장 패턴 + 금장 테두리 + 상단 로고
-  //  기수색 선 · 필기체 행사명(고정) · 큰 이름 · 기수(흰색, 큼) · 맨 하단 기수색 바
+  // 색 어둡게(하단 띠 글자용) — hex → rgb 곱
+  function darken(hex, f){
+    const n=parseInt(hex.slice(1),16), r=(n>>16)&255, gg=(n>>8)&255, b=n&255;
+    const d=v=>Math.round(v*f); return `rgb(${d(r)},${d(gg)},${d(b)})`;
+  }
+
+  // ---- 목걸이 명찰 (신규 디자인 · 참고: 파란 기하학 배경) ----
+  //  파란 기하학 배경 이미지 + 상단 로고 + 기수(흰색) + 큰 이름(흰색)
+  //  맨 하단: 기수색 띠 + 'Elite Club Private night'(CROOKED 폰트). STAFF는 띠 색 없음.
   function renderLanyard(name, team, gisu, W, H){
     const cv=document.createElement('canvas'); cv.width=W; cv.height=H;
     const g=cv.getContext('2d');
-    const S=Math.min(W,H), cx=W/2;
-    const GCOL='#c9a856';
+    const cx=W/2;
     const PRE='"Pretendard","Apple SD Gothic Neo",sans-serif';
-    const SCRIPT='"GreatVibes","Pretendard",cursive';
+    const CROOK='"CROOKED","Courier New",monospace';   // CROOKED 없으면 monospace 대체
     const setFont=(fam,w,px)=>g.font=`${w} ${px}px ${fam}`;
-    const goldGrad=(x,y,x2,y2)=>{ const gd=g.createLinearGradient(x,y,x2,y2);
-      gd.addColorStop(0,'#9d7a2f'); gd.addColorStop(.5,'#f1db8c'); gd.addColorStop(1,'#9d7a2f'); return gd; };
 
-    // 1) 남색 배경
-    const navy=g.createLinearGradient(0,0,0,H);
-    navy.addColorStop(0,'#1c2e4c'); navy.addColorStop(1,'#0f1c31');
-    g.fillStyle=navy; g.fillRect(0,0,W,H);
+    // 1) 배경 (파란 기하학 이미지 · 로드 전이면 남색 폴백)
+    g.fillStyle='#1f2c48'; g.fillRect(0,0,W,H);
+    if(bgLanyardImg) g.drawImage(bgLanyardImg, 0, 0, W, H);
 
-    // 2) 은은한 금장 패턴 (다이아몬드 격자 + 사이 점)
-    g.save();
-    g.fillStyle=GCOL;
-    const step=Math.round(S*0.12), ds=step*0.16;
-    for(let y=step*0.5;y<H;y+=step) for(let x=step*0.5;x<W;x+=step){
-      g.globalAlpha=0.07;
-      g.beginPath(); g.moveTo(x,y-ds); g.lineTo(x+ds,y); g.lineTo(x,y+ds); g.lineTo(x-ds,y); g.closePath(); g.fill();
-      g.globalAlpha=0.05;
-      g.beginPath(); g.arc(x+step/2, y+step/2, S*0.006, 0, Math.PI*2); g.fill();
+    // 2) 엘리트클럽 로고 (상단 가운데 · 파란 그래픽 위)
+    if(logoImg){
+      const maxW=W*0.42, maxH=H*0.135;
+      const ar=logoImg.naturalWidth/logoImg.naturalHeight;
+      let lw=maxW, lh=lw/ar; if(lh>maxH){ lh=maxH; lw=lh*ar; }
+      g.drawImage(logoImg, cx-lw/2, H*0.16-lh/2, lw, lh);
     }
-    g.restore();
 
-    // 3) 맨 하단 기수색 바 (풀블리드)
-    const BH=Math.round(H*0.072);
-    g.fillStyle=gisuColor(gisu); g.fillRect(0, H-BH, W, BH);
+    // 3) 기수 (흰색 · 이름 위)
+    g.textAlign='center'; g.textBaseline='middle'; g.fillStyle='#ffffff';
+    let gs=Math.round(H*0.055), gls=Math.round(gs*0.14);
+    setFont(PRE,700,gs); g.letterSpacing=gls+'px';
+    g.fillText(gisuLabel(gisu), cx+gls/2, H*0.565);
+    g.letterSpacing='0px';
 
-    // 4) 금장 이중 테두리 (바 위 본문 영역을 감쌈)
-    const FM=Math.round(S*0.05);
-    const fx=FM, fy=FM, fw=W-2*FM;
-    const fby=H-BH-Math.round(S*0.028);
-    const fh=fby-fy;
-    g.strokeStyle=goldGrad(fx,fy,fx+fw,fby); g.lineWidth=Math.max(2,S*0.006);
-    g.strokeRect(fx,fy,fw,fh);
-    const ins=Math.round(S*0.016);
-    g.lineWidth=Math.max(1,S*0.0022);
-    g.strokeRect(fx+ins,fy+ins,fw-2*ins,fh-2*ins);
-
-    // 5) 상단 금장 장식 (양옆 선 + 가운데 마름모 + 끝 점)
-    const ornament=(yc)=>{
-      const half=fw*0.34, dd=S*0.017;
-      g.strokeStyle=goldGrad(cx-half,yc,cx+half,yc); g.lineWidth=Math.max(1.4,S*0.0032);
-      g.beginPath(); g.moveTo(cx-half,yc); g.lineTo(cx-dd*2.2,yc); g.moveTo(cx+dd*2.2,yc); g.lineTo(cx+half,yc); g.stroke();
-      g.fillStyle=GCOL;
-      g.beginPath(); g.moveTo(cx,yc-dd); g.lineTo(cx+dd,yc); g.lineTo(cx,yc+dd); g.lineTo(cx-dd,yc); g.closePath(); g.fill();
-      [cx-half,cx+half].forEach(px=>{ g.beginPath(); g.arc(px,yc,S*0.008,0,Math.PI*2); g.fill(); });
-    };
-    ornament(fy+ins+Math.round(fh*0.045));
-
-    // 6) 상단 클럽·행사명 (로고 대신 필기체 텍스트 · 기수색 선 위)
-    g.textAlign='center'; g.textBaseline='middle'; g.letterSpacing='0px';
-    let es=Math.round(fh*0.125); setFont(SCRIPT,400,es);
-    while(g.measureText('Elite Club').width>fw*0.74 && es>16){ es-=2; setFont(SCRIPT,400,es); }
-    g.fillStyle='#e7cd83'; g.fillText('Elite Club', cx, fy+fh*0.20);
-    let ps=Math.round(fh*0.098); setFont(SCRIPT,400,ps);
-    while(g.measureText('Private Night').width>fw*0.80 && ps>14){ ps-=2; setFont(SCRIPT,400,ps); }
-    g.fillStyle='#ece7d8'; g.fillText('Private Night', cx, fy+fh*0.315);
-
-    // 7) 기수색 짧은 선 (참고: KOREA 위 빨간선 → 기수 구분 색)
-    const lineY=fy+fh*0.41;
-    g.strokeStyle=gisuColor(gisu); g.lineWidth=Math.max(3,S*0.009);
-    g.beginPath(); g.moveTo(cx-fw*0.11,lineY); g.lineTo(cx+fw*0.11,lineY); g.stroke();
-
-    // 8) 이름 (크게, 흰색 · 음절 띄어쓰기, 외자 두 칸)
+    // 4) 이름 (크게, 흰색 · 음절 띄어쓰기, 외자 두 칸)
     const t=(name||'').trim(), chars=[...t];
     const disp = chars.length===2 ? chars[0]+'  '+chars[1] : chars.join(' ');
-    let fs=Math.round(fh*0.17), ls;
+    let fs=Math.round(H*0.135), ls;
     do{ ls=Math.round(fs*0.01); setFont(PRE,800,fs); g.letterSpacing=ls+'px';
-        if(g.measureText(disp).width<=fw*0.90 || fs<=24) break; fs-=4; }while(true);
-    g.fillStyle='#ffffff'; g.fillText(disp, cx+ls/2, fy+fh*0.58);
+        if(g.measureText(disp).width<=W*0.88 || fs<=24) break; fs-=4; }while(true);
+    g.fillStyle='#ffffff'; g.fillText(disp, cx+ls/2, H*0.695);
     g.letterSpacing='0px';
 
-    // 9) 기수 표기 (이름 아래 · 흰색 · 큼)
-    let gs=Math.round(fh*0.078), gls=Math.round(gs*0.16);
-    setFont(PRE,700,gs); g.letterSpacing=gls+'px'; g.fillStyle='#ffffff';
-    g.fillText(gisuLabel(gisu), cx+gls/2, fy+fh*0.735);
-    g.letterSpacing='0px';
+    // 5) 맨 하단 기수색 띠 (STAFF는 색 없음) + 행사명(CROOKED 폰트)
+    const BH=Math.round(H*0.088), barY=H-BH;
+    if(gisu!=='staff'){ g.fillStyle=gisuColor(gisu); g.fillRect(0, barY, W, BH); }
+    const barTxt='Elite Club Private night';
+    const txtCol = gisu==='staff' ? '#9aa7bd' : darken(gisuColor(gisu), 0.5);
+    g.fillStyle=txtCol; g.textAlign='center'; g.textBaseline='middle'; g.letterSpacing='0px';
+    let bs=Math.round(BH*0.52); setFont(CROOK,700,bs);
+    while(g.measureText(barTxt).width>W*0.92 && bs>10){ bs-=1; setFont(CROOK,700,bs); }
+    g.fillText(barTxt, cx, barY+BH/2 + BH*0.02);
     return cv;
   }
 
@@ -986,7 +960,7 @@ function setStatus(t,busy){ const s=$('status'); s.textContent=t; s.className='s
       if(!names.length || !gisu) return;
       setStatus('폰트·로고 불러오는 중…', true);
       try{ await document.fonts.load('800 80px "Pretendard"'); await document.fonts.load('700 80px "Pretendard"'); await document.fonts.load('600 60px "Pretendard"'); await document.fonts.load('400 60px "GreatVibes"'); await document.fonts.ready; }catch(e){}
-      if(fmt.gisuBand){ try{ logoImg = await logoP; }catch(e){} }
+      if(fmt.gisuBand){ try{ logoImg = await logoP; bgLanyardImg = await bgLanyardP; }catch(e){} }
       for(let i=0;i<names.length;i++){
         setStatus(`만드는 중… ${i+1}/${names.length}`, true);
         cards.push({name:names[i], team:selTeam, gisu, canvas:draw(names[i], selTeam, gisu)});
