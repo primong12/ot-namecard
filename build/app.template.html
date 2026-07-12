@@ -679,7 +679,7 @@ function setStatus(t,busy){ const s=$('status'); s.textContent=t; s.className='s
   const bgLanyardP = loadImg(BG_LANYARD_SRC);
   let bgLanyardImg = null; bgLanyardP.then(i=>{ bgLanyardImg = i; });
   const BG_BY_GISU = {};
-  const BG_SRC = { '1':"__BG_1__", '2':"__BG_2__", '3':"__BG_3__", '4':"__BG_4__", 'guest':"__BG_GUEST__" };
+  const BG_SRC = { '1':"__BG_1__", '2':"__BG_2__", '3':"__BG_3__", '4':"__BG_4__", 'guest':"__BG_GUEST__", 'staff':"__BG_STAFF__" };
   const bgGisuPs = Object.entries(BG_SRC).map(([k,src])=>{ const p=loadImg(src); p.then(i=>{ BG_BY_GISU[k]=i; }); return p; });
 
   // 스탠드 이름표 배경(가로 · 왼쪽 파란 기하학, 로고·글자 없음)
@@ -810,9 +810,9 @@ function setStatus(t,busy){ const s=$('status'); s.textContent=t; s.className='s
     g.fillStyle='#22314e'; g.fillRect(0,0,W,H);
     if(bgStandImg) g.drawImage(bgStandImg, 0, 0, W, H);
 
-    // 2) 엘리트클럽 로고 (왼쪽 파란 영역 · 세로 중앙)
+    // 2) 엘리트클럽 로고 (왼쪽 파란 영역 · 세로 중앙 · 조금 작게)
     if(logoImg){
-      const maxW=W*0.20, maxH=H*0.66;
+      const maxW=W*0.165, maxH=H*0.55;
       const ar=logoImg.naturalWidth/logoImg.naturalHeight;
       let lw=maxW, lh=lw/ar; if(lh>maxH){ lh=maxH; lw=lh*ar; }
       g.drawImage(logoImg, W*0.15-lw/2, H*0.5-lh/2, lw, lh);
