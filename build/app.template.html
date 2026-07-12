@@ -682,10 +682,11 @@ function setStatus(t,busy){ const s=$('status'); s.textContent=t; s.className='s
   const BG_SRC = { '1':"__BG_1__", '2':"__BG_2__", '3':"__BG_3__", '4':"__BG_4__", 'guest':"__BG_GUEST__", 'staff':"__BG_STAFF__" };
   const bgGisuPs = Object.entries(BG_SRC).map(([k,src])=>{ const p=loadImg(src); p.then(i=>{ BG_BY_GISU[k]=i; }); return p; });
 
-  // 스탠드 이름표 배경(가로 · 왼쪽 파란 기하학, 로고·글자 없음)
-  const BG_STAND_SRC = "__BG_STAND__";
-  const bgStandP = loadImg(BG_STAND_SRC);
-  let bgStandImg = null; bgStandP.then(i=>{ bgStandImg = i; });
+  // 스탠드 이름표 배경(가로 · 로고·글자 없음) — 파랑=기수/STAFF, 초록=게스트
+  const bgStandBlueP  = loadImg("__BG_STAND_BLUE__");
+  const bgStandGreenP = loadImg("__BG_STAND_GREEN__");
+  let bgStandBlueImg = null;  bgStandBlueP.then(i=>{ bgStandBlueImg = i; });
+  let bgStandGreenImg = null; bgStandGreenP.then(i=>{ bgStandGreenImg = i; });
 
   // 기수 구분 띠 색 — 무지개 7색 순환(빨·주·노·초·파·남·보), 게스트는 회색, STAFF는 금색
   const GUEST_COLOR = '#8a92a6';
@@ -806,9 +807,10 @@ function setStatus(t,busy){ const s=$('status'); s.textContent=t; s.className='s
     const g=cv.getContext('2d');
     const setFont=(w,px)=>g.font=`${w} ${px}px "Pretendard","Apple SD Gothic Neo",sans-serif`;
 
-    // 1) 배경 (가로 파란 기하학 · 로드 전 남색 폴백)
-    g.fillStyle='#22314e'; g.fillRect(0,0,W,H);
-    if(bgStandImg) g.drawImage(bgStandImg, 0, 0, W, H);
+    // 1) 배경 — 게스트는 초록, 그 외(기수·STAFF)는 파랑
+    const bg = gisu==='guest' ? bgStandGreenImg : bgStandBlueImg;
+    g.fillStyle = gisu==='guest' ? '#134b2a' : '#22314e'; g.fillRect(0,0,W,H);
+    if(bg) g.drawImage(bg, 0, 0, W, H);
 
     // 2) 엘리트클럽 로고 (왼쪽 파란 영역 · 세로 중앙 · 조금 작게)
     if(logoImg){
@@ -956,7 +958,7 @@ function setStatus(t,busy){ const s=$('status'); s.textContent=t; s.className='s
       if(!names.length || !gisu) return;
       setStatus('폰트·로고 불러오는 중…', true);
       try{ await document.fonts.load('800 80px "Pretendard"'); await document.fonts.load('700 80px "Pretendard"'); await document.fonts.load('600 60px "Pretendard"'); await document.fonts.load('400 60px "GreatVibes"'); await document.fonts.ready; }catch(e){}
-      if(fmt.gisuBand){ try{ logoImg = await logoP; bgLanyardImg = await bgLanyardP; bgStandImg = await bgStandP; await Promise.all(bgGisuPs); }catch(e){} }
+      if(fmt.gisuBand){ try{ logoImg = await logoP; bgLanyardImg = await bgLanyardP; bgStandBlueImg = await bgStandBlueP; bgStandGreenImg = await bgStandGreenP; await Promise.all(bgGisuPs); }catch(e){} }
       for(let i=0;i<names.length;i++){
         setStatus(`만드는 중… ${i+1}/${names.length}`, true);
         cards.push({name:names[i], team:selTeam, gisu, canvas:draw(names[i], selTeam, gisu)});
