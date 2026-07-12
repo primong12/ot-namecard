@@ -88,8 +88,11 @@ for tok, fn in (("__BG_1__","bg_1.png"), ("__BG_2__","bg_2.png"), ("__BG_3__","b
                 ("__BG_4__","bg_4.png"), ("__BG_GUEST__","bg_guest.png")):
     html = html.replace(tok, f"data:image/png;base64,{read_b64('assets/'+fn)}")
 
+# 8) 스탠드 이름표 배경(가로 · 왼쪽 파란 기하학) data URL 내장
+html = html.replace("__BG_STAND__", f"data:image/png;base64,{read_b64('assets/bg_stand.png')}")
+
 # 남은 토큰이 없는지 검증
-for token in ("<!--SHIM_SCRIPT-->", "<!--JSZIP_SCRIPT-->", "<!--FACEAPI_SCRIPT-->", "__FONT_SRC__", "__FONT_BOLD__", "__FONT_SEMIBOLD__", "__TAG_SRC__", "__LOGO_SRC__", "__FONT_SCRIPT__", "__BG_LANYARD__", "__BG_1__", "__BG_2__", "__BG_3__", "__BG_4__", "__BG_GUEST__"):
+for token in ("<!--SHIM_SCRIPT-->", "<!--JSZIP_SCRIPT-->", "<!--FACEAPI_SCRIPT-->", "__FONT_SRC__", "__FONT_BOLD__", "__FONT_SEMIBOLD__", "__TAG_SRC__", "__LOGO_SRC__", "__FONT_SCRIPT__", "__BG_LANYARD__", "__BG_1__", "__BG_2__", "__BG_3__", "__BG_4__", "__BG_GUEST__", "__BG_STAND__"):
     if token in html:
         sys.exit(f"치환되지 않은 토큰이 남아 있습니다: {token}")
 

@@ -239,7 +239,7 @@
       <div class="card field">
         <label>기수</label>
         <select class="nt-gisu"></select>
-        <p class="hint" style="margin-top:10px">스탠드 이름표 · 200 × 75mm (가로, 크기 추후 변경)<br>하단 기수 구분 띠: 1기 <b style="color:#e0473f">빨</b> · 2기 <b style="color:#ef8c2f">주</b> · 3기 <b style="color:#d4b012">노</b> · 4기 <b style="color:#27ad63">초</b> · 5기 <b style="color:#2f6fd0">파</b> · 6기 <b style="color:#3a3f8f">남</b> · 7기 <b style="color:#7d4bc4">보</b> (순환) · 게스트 <b style="color:#8a92a6">회</b> · STAFF <b style="color:#c9a856">금</b></p>
+        <p class="hint" style="margin-top:10px">스탠드 이름표 · 200 × 75mm (가로)<br>기수 구분 띠 없음 · 왼쪽 로고 + 오른쪽에 기수·이름만 표시</p>
       </div>
       <div class="card field">
         <label>이름 명단</label>
@@ -682,6 +682,11 @@ function setStatus(t,busy){ const s=$('status'); s.textContent=t; s.className='s
   const BG_SRC = { '1':"__BG_1__", '2':"__BG_2__", '3':"__BG_3__", '4':"__BG_4__", 'guest':"__BG_GUEST__" };
   const bgGisuPs = Object.entries(BG_SRC).map(([k,src])=>{ const p=loadImg(src); p.then(i=>{ BG_BY_GISU[k]=i; }); return p; });
 
+  // 스탠드 이름표 배경(가로 · 왼쪽 파란 기하학, 로고·글자 없음)
+  const BG_STAND_SRC = "__BG_STAND__";
+  const bgStandP = loadImg(BG_STAND_SRC);
+  let bgStandImg = null; bgStandP.then(i=>{ bgStandImg = i; });
+
   // 기수 구분 띠 색 — 무지개 7색 순환(빨·주·노·초·파·남·보), 게스트는 회색, STAFF는 금색
   const GUEST_COLOR = '#8a92a6';
   const STAFF_COLOR = '#c9a856';
@@ -704,7 +709,7 @@ function setStatus(t,busy){ const s=$('status'); s.textContent=t; s.className='s
   const FORMATS = {
     nametag: { key:'nametag', W:1287, H:827,  cardWmm:109, cardHmm:70,  orient:'landscape', cols:2, rows:2, gapX:25, gapY:20, fileTag:'엘리트_이름표', teams:true,  gisuBand:false, draw:renderTag },
     lanyard: { key:'lanyard', W:1146, H:1429, cardWmm:97,  cardHmm:121, orient:'portrait',  cols:2, rows:2, gapX:8,  gapY:16, fileTag:'목걸이_명찰',  teams:false, gisuBand:true,  draw:renderLanyard },
-    stand:   { key:'stand',   W:2362, H:886,  cardWmm:200, cardHmm:75,  orient:'portrait',  cols:1, rows:3, gapX:0,  gapY:16, fileTag:'스탠드_이름표', teams:false, gisuBand:true,  draw:renderBadge },
+    stand:   { key:'stand',   W:2362, H:886,  cardWmm:200, cardHmm:75,  orient:'portrait',  cols:1, rows:3, gapX:0,  gapY:16, fileTag:'스탠드_이름표', teams:false, gisuBand:true,  draw:renderStand },
   };
 
   function roundRectPath(g,x,y,w,h,r){
@@ -794,60 +799,40 @@ function setStatus(t,busy){ const s=$('status'); s.textContent=t; s.className='s
     return cv;
   }
 
-  // ---- 목걸이 명찰 / 스탠드 이름표 그리기 (참고 디자인 기반) ----
-  //  상단: 엘리트클럽 로고 · 그 아래 기수 · 골드 구분선 · 큰 이름 · 하단 기수 구분 띠
-  //  team 인자는 쓰지 않습니다(기수 띠로 구분). 크기 무관 상대좌표로 세로/가로 모두 대응.
-  function renderBadge(name, team, gisu, W, H){
+  // ---- 스탠드 이름표 (가로 · 참고 디자인) ----
+  //  배경 이미지(왼쪽 파란 기하학) + 왼쪽 로고 + 오른쪽 기수(위)·이름(아래) · 기수 구분 띠 없음
+  function renderStand(name, team, gisu, W, H){
     const cv=document.createElement('canvas'); cv.width=W; cv.height=H;
     const g=cv.getContext('2d');
     const setFont=(w,px)=>g.font=`${w} ${px}px "Pretendard","Apple SD Gothic Neo",sans-serif`;
-    const S=Math.min(W,H);
 
-    // 1) 남색 본체
-    const navy=g.createLinearGradient(0,0,0,H);
-    navy.addColorStop(0,'#1b2c48'); navy.addColorStop(1,'#132138');
-    g.fillStyle=navy; g.fillRect(0,0,W,H);
+    // 1) 배경 (가로 파란 기하학 · 로드 전 남색 폴백)
+    g.fillStyle='#22314e'; g.fillRect(0,0,W,H);
+    if(bgStandImg) g.drawImage(bgStandImg, 0, 0, W, H);
 
-    // 2) 하단 기수 구분 띠 (풀블리드 · 색은 기수별)
-    const BH=Math.round(H*0.085);
-    g.fillStyle=gisuColor(gisu); g.fillRect(0, H-BH, W, BH);
-
-    // 3) 골드 얇은 테두리 (띠 위 본문 영역을 감쌈)
-    const FM=Math.round(S*0.05);
-    const fx=FM, fy=FM, fw=W-2*FM;
-    const frameBottom=H-BH-Math.round(S*0.035);
-    const fh=frameBottom-fy;
-    const r=Math.round(S*0.018);
-    g.strokeStyle='#c9a856'; g.lineWidth=Math.max(2, S*0.006);
-    roundRectPath(g,fx,fy,fw,fh,r); g.stroke();
-
-    // 4) 로고 (상단 · STAFF 자리)
+    // 2) 엘리트클럽 로고 (왼쪽 파란 영역 · 세로 중앙)
     if(logoImg){
-      const maxW=fw*0.62, maxH=fh*0.28;
+      const maxW=W*0.20, maxH=H*0.66;
       const ar=logoImg.naturalWidth/logoImg.naturalHeight;
       let lw=maxW, lh=lw/ar; if(lh>maxH){ lh=maxH; lw=lh*ar; }
-      g.drawImage(logoImg, (W-lw)/2, fy+fh*0.20-lh/2, lw, lh);
+      g.drawImage(logoImg, W*0.15-lw/2, H*0.5-lh/2, lw, lh);
     }
 
-    // 5) 기수 (로고 아래)
-    g.fillStyle='#ffffff'; g.textAlign='center'; g.textBaseline='middle'; g.letterSpacing='0px';
-    setFont(600, Math.round(fh*0.085));
-    g.fillText(gisuLabel(gisu), W/2, fy+fh*0.40);
-
-    // 6) 골드 구분선
-    const divY=fy+fh*0.50;
-    g.strokeStyle='#c9a856'; g.lineWidth=Math.max(1.5,S*0.004);
-    g.beginPath(); g.moveTo(fx+fw*0.05, divY); g.lineTo(fx+fw*0.95, divY); g.stroke();
-
-    // 7) 이름 (구분선 아래, 크게) — 외자(두 글자)는 가운데 공백 2칸 ("이  석")
-    const t=(name||'').trim();
-    const disp=(t.length===2 && !/\s/.test(t)) ? t[0]+'  '+t[1] : t;
-    const nameCY=(divY+frameBottom)/2;
-    let fs=Math.round(fh*0.34), ls;
-    do{ ls=Math.round(fs*0.02); setFont(800,fs); g.letterSpacing=ls+'px';
-        if(g.measureText(disp).width<=fw*0.84 || fs<=20) break; fs-=4; }while(true);
-    g.fillStyle='#ffffff'; g.textAlign='center'; g.textBaseline='middle';
-    g.fillText(disp, W/2 + ls/2, nameCY);
+    // 3) 오른쪽 남색 영역: 기수(위) + 이름(아래) · 흰색
+    const cxR=W*0.67;
+    g.textAlign='center'; g.textBaseline='middle'; g.fillStyle='#ffffff';
+    // 기수
+    let gs=Math.round(H*0.16), gls=Math.round(gs*0.08);
+    setFont(700,gs); g.letterSpacing=gls+'px';
+    g.fillText(gisuLabel(gisu), cxR+gls/2, H*0.30);
+    g.letterSpacing='0px';
+    // 이름 (음절 띄어쓰기 · 외자 두 칸)
+    const t=(name||'').trim(), chars=[...t];
+    const disp = chars.length===2 ? chars[0]+'  '+chars[1] : chars.join(' ');
+    let fs=Math.round(H*0.36), ls;
+    do{ ls=Math.round(fs*0.01); setFont(800,fs); g.letterSpacing=ls+'px';
+        if(g.measureText(disp).width<=W*0.58 || fs<=24) break; fs-=4; }while(true);
+    g.fillStyle='#ffffff'; g.fillText(disp, cxR+ls/2, H*0.65);
     g.letterSpacing='0px';
     return cv;
   }
@@ -971,7 +956,7 @@ function setStatus(t,busy){ const s=$('status'); s.textContent=t; s.className='s
       if(!names.length || !gisu) return;
       setStatus('폰트·로고 불러오는 중…', true);
       try{ await document.fonts.load('800 80px "Pretendard"'); await document.fonts.load('700 80px "Pretendard"'); await document.fonts.load('600 60px "Pretendard"'); await document.fonts.load('400 60px "GreatVibes"'); await document.fonts.ready; }catch(e){}
-      if(fmt.gisuBand){ try{ logoImg = await logoP; bgLanyardImg = await bgLanyardP; await Promise.all(bgGisuPs); }catch(e){} }
+      if(fmt.gisuBand){ try{ logoImg = await logoP; bgLanyardImg = await bgLanyardP; bgStandImg = await bgStandP; await Promise.all(bgGisuPs); }catch(e){} }
       for(let i=0;i<names.length;i++){
         setStatus(`만드는 중… ${i+1}/${names.length}`, true);
         cards.push({name:names[i], team:selTeam, gisu, canvas:draw(names[i], selTeam, gisu)});
