@@ -673,9 +673,14 @@ function setStatus(t,busy){ const s=$('status'); s.textContent=t; s.className='s
   let logoImg = null; logoP.then(i=>{ logoImg = i; });
 
   // 목걸이 명찰 배경(파란 기하학) — 내장 data URL, 미리 로드
+  //  bgLanyardImg : 기본(빈 띠) · STAFF/기타 기수 폴백용
+  //  BG_BY_GISU   : 1~4기·게스트는 하단 띠·글자까지 포함된 완성 배경
   const BG_LANYARD_SRC = "__BG_LANYARD__";
   const bgLanyardP = loadImg(BG_LANYARD_SRC);
   let bgLanyardImg = null; bgLanyardP.then(i=>{ bgLanyardImg = i; });
+  const BG_BY_GISU = {};
+  const BG_SRC = { '1':"__BG_1__", '2':"__BG_2__", '3':"__BG_3__", '4':"__BG_4__", 'guest':"__BG_GUEST__" };
+  const bgGisuPs = Object.entries(BG_SRC).map(([k,src])=>{ const p=loadImg(src); p.then(i=>{ BG_BY_GISU[k]=i; }); return p; });
 
   // 기수 구분 띠 색 — 무지개 7색 순환(빨·주·노·초·파·남·보), 게스트는 회색, STAFF는 금색
   const GUEST_COLOR = '#8a92a6';
@@ -854,8 +859,9 @@ function setStatus(t,busy){ const s=$('status'); s.textContent=t; s.className='s
   }
 
   // ---- 목걸이 명찰 (신규 디자인 · 참고: 파란 기하학 배경) ----
-  //  파란 기하학 배경 이미지 + 상단 로고 + 기수(흰색) + 큰 이름(흰색)
-  //  맨 하단: 기수색 띠 + 'Elite Club Private night'(CROOKED 폰트). STAFF는 띠 색 없음.
+  //  1~4기·게스트는 하단 띠·행사명이 이미 포함된 완성 배경 이미지를 사용
+  //  STAFF/기타 기수는 기본(빈 띠) 배경 + 하단 글자를 직접 그림
+  //  그 위에 상단 로고 + 기수(흰색) + 큰 이름(흰색)
   function renderLanyard(name, team, gisu, W, H){
     const cv=document.createElement('canvas'); cv.width=W; cv.height=H;
     const g=cv.getContext('2d');
@@ -864,43 +870,48 @@ function setStatus(t,busy){ const s=$('status'); s.textContent=t; s.className='s
     const CROOK='"CROOKED","Courier New",monospace';   // CROOKED 없으면 monospace 대체
     const setFont=(fam,w,px)=>g.font=`${w} ${px}px ${fam}`;
 
-    // 1) 배경 (파란 기하학 이미지 · 로드 전이면 남색 폴백)
+    // 1) 배경 — 기수 전용(하단 띠·글자 포함) 우선, 없으면 기본 배경
+    const bg = BG_BY_GISU[gisu] || bgLanyardImg;
+    const hasBakedBar = !!BG_BY_GISU[gisu];      // 완성 배경이면 하단 띠를 그리지 않음
     g.fillStyle='#1f2c48'; g.fillRect(0,0,W,H);
-    if(bgLanyardImg) g.drawImage(bgLanyardImg, 0, 0, W, H);
+    if(bg) g.drawImage(bg, 0, 0, W, H);
 
-    // 2) 엘리트클럽 로고 (상단 가운데 · 파란 그래픽 위)
+    // 2) 엘리트클럽 로고 (상단 가운데 · 파란 그래픽 위 · 크게)
     if(logoImg){
-      const maxW=W*0.42, maxH=H*0.135;
+      const maxW=W*0.56, maxH=H*0.185;
       const ar=logoImg.naturalWidth/logoImg.naturalHeight;
       let lw=maxW, lh=lw/ar; if(lh>maxH){ lh=maxH; lw=lh*ar; }
-      g.drawImage(logoImg, cx-lw/2, H*0.16-lh/2, lw, lh);
+      g.drawImage(logoImg, cx-lw/2, H*0.175-lh/2, lw, lh);
     }
 
-    // 3) 기수 (흰색 · 이름 위)
+    // 3) 기수 (흰색 · 이름 위 · 크게)
     g.textAlign='center'; g.textBaseline='middle'; g.fillStyle='#ffffff';
-    let gs=Math.round(H*0.055), gls=Math.round(gs*0.14);
+    let gs=Math.round(H*0.07), gls=Math.round(gs*0.12);
     setFont(PRE,700,gs); g.letterSpacing=gls+'px';
-    g.fillText(gisuLabel(gisu), cx+gls/2, H*0.565);
+    g.fillText(gisuLabel(gisu), cx+gls/2, H*0.55);
     g.letterSpacing='0px';
 
     // 4) 이름 (크게, 흰색 · 음절 띄어쓰기, 외자 두 칸)
     const t=(name||'').trim(), chars=[...t];
     const disp = chars.length===2 ? chars[0]+'  '+chars[1] : chars.join(' ');
-    let fs=Math.round(H*0.135), ls;
+    let fs=Math.round(H*0.16), ls;
     do{ ls=Math.round(fs*0.01); setFont(PRE,800,fs); g.letterSpacing=ls+'px';
-        if(g.measureText(disp).width<=W*0.88 || fs<=24) break; fs-=4; }while(true);
-    g.fillStyle='#ffffff'; g.fillText(disp, cx+ls/2, H*0.695);
+        if(g.measureText(disp).width<=W*0.90 || fs<=24) break; fs-=4; }while(true);
+    g.fillStyle='#ffffff'; g.fillText(disp, cx+ls/2, H*0.70);
     g.letterSpacing='0px';
 
-    // 5) 맨 하단 기수색 띠 (STAFF는 색 없음) + 행사명(CROOKED 폰트)
-    const BH=Math.round(H*0.088), barY=H-BH;
-    if(gisu!=='staff'){ g.fillStyle=gisuColor(gisu); g.fillRect(0, barY, W, BH); }
-    const barTxt='Elite Club Private night';
-    const txtCol = gisu==='staff' ? '#9aa7bd' : darken(gisuColor(gisu), 0.5);
-    g.fillStyle=txtCol; g.textAlign='center'; g.textBaseline='middle'; g.letterSpacing='0px';
-    let bs=Math.round(BH*0.52); setFont(CROOK,700,bs);
-    while(g.measureText(barTxt).width>W*0.92 && bs>10){ bs-=1; setFont(CROOK,700,bs); }
-    g.fillText(barTxt, cx, barY+BH/2 + BH*0.02);
+    // 5) 하단 띠·행사명 — 완성 배경이면 이미 있으므로 건너뜀
+    //    (STAFF=빈색·기타 기수만 직접 그림 · CROOKED 없으면 monospace 대체)
+    if(!hasBakedBar){
+      const BH=Math.round(H*0.088), barY=H-BH;
+      if(gisu!=='staff'){ g.fillStyle=gisuColor(gisu); g.fillRect(0, barY, W, BH); }
+      const barTxt='Elite Club Private night';
+      g.fillStyle = gisu==='staff' ? '#9aa7bd' : darken(gisuColor(gisu), 0.5);
+      g.textAlign='center'; g.textBaseline='middle'; g.letterSpacing='0px';
+      let bs=Math.round(BH*0.52); setFont(CROOK,700,bs);
+      while(g.measureText(barTxt).width>W*0.92 && bs>10){ bs-=1; setFont(CROOK,700,bs); }
+      g.fillText(barTxt, cx, barY+BH/2 + BH*0.02);
+    }
     return cv;
   }
 
@@ -960,7 +971,7 @@ function setStatus(t,busy){ const s=$('status'); s.textContent=t; s.className='s
       if(!names.length || !gisu) return;
       setStatus('폰트·로고 불러오는 중…', true);
       try{ await document.fonts.load('800 80px "Pretendard"'); await document.fonts.load('700 80px "Pretendard"'); await document.fonts.load('600 60px "Pretendard"'); await document.fonts.load('400 60px "GreatVibes"'); await document.fonts.ready; }catch(e){}
-      if(fmt.gisuBand){ try{ logoImg = await logoP; bgLanyardImg = await bgLanyardP; }catch(e){} }
+      if(fmt.gisuBand){ try{ logoImg = await logoP; bgLanyardImg = await bgLanyardP; await Promise.all(bgGisuPs); }catch(e){} }
       for(let i=0;i<names.length;i++){
         setStatus(`만드는 중… ${i+1}/${names.length}`, true);
         cards.push({name:names[i], team:selTeam, gisu, canvas:draw(names[i], selTeam, gisu)});
