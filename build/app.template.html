@@ -873,9 +873,9 @@ function setStatus(t,busy){ const s=$('status'); s.textContent=t; s.className='s
 
     // 3) 기수 (흰색 · 이름 위 · 더 크게(기존의 150%) · 위로 올려 이름과 간격 확보)
     g.textAlign='center'; g.textBaseline='middle'; g.fillStyle='#ffffff';
-    let gs=Math.round(H*0.132), gls=Math.round(gs*0.10);
+    let gs=Math.round(H*0.115), gls=Math.round(gs*0.10);
     setFont(PRE,700,gs); g.letterSpacing=gls+'px';
-    g.fillText(gisuLabel(gisu), cx+gls/2, H*0.48);
+    g.fillText(gisuLabel(gisu), cx+gls/2, H*0.53);
     g.letterSpacing='0px';
 
     // 4) 이름 (크게, 흰색 · 음절 띄어쓰기, 외자 두 칸)
@@ -884,7 +884,7 @@ function setStatus(t,busy){ const s=$('status'); s.textContent=t; s.className='s
     let fs=Math.round(H*0.16), ls;
     do{ ls=Math.round(fs*0.01); setFont(PRE,800,fs); g.letterSpacing=ls+'px';
         if(g.measureText(disp).width<=W*0.90 || fs<=24) break; fs-=4; }while(true);
-    g.fillStyle='#ffffff'; g.fillText(disp, cx+ls/2, H*0.70);
+    g.fillStyle='#ffffff'; g.fillText(disp, cx+ls/2, H*0.74);
     g.letterSpacing='0px';
 
     // 5) 하단 띠·행사명 — 완성 배경이면 이미 있으므로 건너뜀
