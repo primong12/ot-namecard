@@ -1178,6 +1178,42 @@ function setStatus(t,busy){ const s=$('status'); s.textContent=t; s.className='s
   // ---- 사용자지정 탭 ----
   //  배경 이미지(드래그앤드롭) + 크기(mm) + 기수/이름 명단
   //  오른쪽 미리보기에서 기수·이름을 끌어 위치, 슬라이더로 크기 조정 → '만들기'로 명단 일괄 생성
+  // 업로드 이미지의 물리 크기(mm) 계산 — PNG pHYs / JPEG JFIF의 DPI를 읽음
+  //  DPI 정보가 없으면 72dpi로 가정(현재 제작 환경 기준)
+  function imageSizeMM(u8, natW, natH){
+    const dv=new DataView(u8.buffer, u8.byteOffset, u8.byteLength);
+    let dpiX=null, dpiY=null;
+    try{
+      if(u8.length>16 && dv.getUint32(0)===0x89504E47){                 // PNG
+        let off=8;
+        while(off+12<=u8.length){
+          const len=dv.getUint32(off);
+          const t=String.fromCharCode(u8[off+4],u8[off+5],u8[off+6],u8[off+7]);
+          if(t==='pHYs'){ const ppuX=dv.getUint32(off+8), ppuY=dv.getUint32(off+12), unit=u8[off+16];
+            if(unit===1 && ppuX>0){ dpiX=ppuX*0.0254; dpiY=ppuY*0.0254; } break; }
+          if(t==='IDAT' || t==='IEND') break;
+          off += 12+len;
+        }
+      } else if(u8.length>18 && dv.getUint16(0)===0xFFD8){              // JPEG
+        let off=2;
+        while(off+16<=u8.length){
+          if(u8[off]!==0xFF) break;
+          const marker=u8[off+1], size=dv.getUint16(off+2);
+          if(marker===0xE0 && u8[off+4]===0x4A && u8[off+5]===0x46){    // JFIF
+            const units=u8[off+11], xd=dv.getUint16(off+12), yd=dv.getUint16(off+14);
+            if(units===1 && xd>0){ dpiX=xd; dpiY=yd; }
+            else if(units===2 && xd>0){ dpiX=xd*2.54; dpiY=yd*2.54; }
+            break;
+          }
+          if(marker===0xDA) break;
+          off += 2+size;
+        }
+      }
+    }catch(e){}
+    if(!dpiX || !(dpiX>0)){ dpiX=dpiY=72; }
+    return { w:Math.max(1,Math.round(natW/dpiX*25.4)), h:Math.max(1,Math.round(natH/dpiY*25.4)) };
+  }
+
   function computeA4Layout(wmm, hmm){
     const gap=8, margin=8;
     const fit=(pw,ph)=>{
@@ -1285,8 +1321,15 @@ function setStatus(t,busy){ const s=$('status'); s.textContent=t; s.className='s
     function loadBg(file){
       if(!file || !file.type.startsWith('image/')) return;
       const url=URL.createObjectURL(file);
-      loadImg(url).then(img=>{ bgImg=img; bgNameEl.textContent=file.name; drawPreview(); refresh();
-        setStatus('배경 준비됨 · 위치·크기 맞춘 뒤 만들기', false); });
+      loadImg(url).then(async img=>{
+        bgImg=img; bgNameEl.textContent=file.name;
+        // 이미지에 담긴 물리 크기(mm)를 자동으로 크기 칸에 반영 (이후 직접 수정 가능)
+        let sized='';
+        try{ const buf=await file.arrayBuffer(); const mm=imageSizeMM(new Uint8Array(buf), img.naturalWidth, img.naturalHeight);
+          if(mm){ wEl.value=mm.w; hEl.value=mm.h; sized=` · 크기 자동 ${mm.w}×${mm.h}mm`; } }catch(e){}
+        drawPreview(); refresh();
+        setStatus(`배경 준비됨${sized} · 위치·크기 맞춘 뒤 만들기`, false);
+      });
     }
 
     // ---- 입력 반영 ----
