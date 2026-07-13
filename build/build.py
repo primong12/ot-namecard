@@ -85,7 +85,8 @@ html = html.replace("__FONT_SCRIPT__", f"data:font/woff2;base64,{read_b64('fonts
 # 7) 목걸이 명찰 배경(파란 기하학) data URL 내장 — 기본(빈 띠) + 기수별(하단 띠·글자 포함)
 html = html.replace("__BG_LANYARD__", f"data:image/png;base64,{read_b64('assets/bg_lanyard.png')}")
 for tok, fn in (("__BG_1__","bg_1.png"), ("__BG_2__","bg_2.png"), ("__BG_3__","bg_3.png"),
-                ("__BG_4__","bg_4.png"), ("__BG_GUEST__","bg_guest.png"), ("__BG_STAFF__","bg_staff.png")):
+                ("__BG_4__","bg_4.png"), ("__BG_5__","bg_5.png"), ("__BG_6__","bg_6.png"),
+                ("__BG_7__","bg_7.png"), ("__BG_GUEST__","bg_guest.png"), ("__BG_STAFF__","bg_staff.png")):
     html = html.replace(tok, f"data:image/png;base64,{read_b64('assets/'+fn)}")
 
 # 8) 스탠드 이름표 배경(가로) data URL 내장 — 파랑=기수, 회색=게스트
@@ -93,7 +94,7 @@ html = html.replace("__BG_STAND_BLUE__",  f"data:image/png;base64,{read_b64('ass
 html = html.replace("__BG_STAND_GUEST__", f"data:image/png;base64,{read_b64('assets/bg_stand_guest.png')}")
 
 # 남은 토큰이 없는지 검증
-for token in ("<!--SHIM_SCRIPT-->", "<!--JSZIP_SCRIPT-->", "<!--FACEAPI_SCRIPT-->", "__FONT_SRC__", "__FONT_BOLD__", "__FONT_SEMIBOLD__", "__TAG_SRC__", "__LOGO_SRC__", "__FONT_SCRIPT__", "__BG_LANYARD__", "__BG_1__", "__BG_2__", "__BG_3__", "__BG_4__", "__BG_GUEST__", "__BG_STAFF__", "__BG_STAND_BLUE__", "__BG_STAND_GUEST__"):
+for token in ("<!--SHIM_SCRIPT-->", "<!--JSZIP_SCRIPT-->", "<!--FACEAPI_SCRIPT-->", "__FONT_SRC__", "__FONT_BOLD__", "__FONT_SEMIBOLD__", "__TAG_SRC__", "__LOGO_SRC__", "__FONT_SCRIPT__", "__BG_LANYARD__", "__BG_1__", "__BG_2__", "__BG_3__", "__BG_4__", "__BG_5__", "__BG_6__", "__BG_7__", "__BG_GUEST__", "__BG_STAFF__", "__BG_STAND_BLUE__", "__BG_STAND_GUEST__"):
     if token in html:
         sys.exit(f"치환되지 않은 토큰이 남아 있습니다: {token}")
 

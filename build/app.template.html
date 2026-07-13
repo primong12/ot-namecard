@@ -740,7 +740,7 @@ function setStatus(t,busy){ const s=$('status'); s.textContent=t; s.className='s
   const bgLanyardP = loadImg(BG_LANYARD_SRC);
   let bgLanyardImg = null; bgLanyardP.then(i=>{ bgLanyardImg = i; });
   const BG_BY_GISU = {};
-  const BG_SRC = { '1':"__BG_1__", '2':"__BG_2__", '3':"__BG_3__", '4':"__BG_4__", 'guest':"__BG_GUEST__", 'staff':"__BG_STAFF__" };
+  const BG_SRC = { '1':"__BG_1__", '2':"__BG_2__", '3':"__BG_3__", '4':"__BG_4__", '5':"__BG_5__", '6':"__BG_6__", '7':"__BG_7__", 'guest':"__BG_GUEST__", 'staff':"__BG_STAFF__" };
   const bgGisuPs = Object.entries(BG_SRC).map(([k,src])=>{ const p=loadImg(src); p.then(i=>{ BG_BY_GISU[k]=i; }); return p; });
 
   // 스탠드 이름표 배경(가로 · 로고·글자 없음) — 파랑=기수/STAFF, 회색=게스트
