@@ -871,11 +871,11 @@ function setStatus(t,busy){ const s=$('status'); s.textContent=t; s.className='s
       g.drawImage(logoImg, cx-lw/2, H*0.175-lh/2, lw, lh);
     }
 
-    // 3) 기수 (흰색 · 이름 위 · 더 크게 · 위로 올려 이름과 간격 확보)
+    // 3) 기수 (흰색 · 이름 위 · 더 크게(기존의 150%) · 위로 올려 이름과 간격 확보)
     g.textAlign='center'; g.textBaseline='middle'; g.fillStyle='#ffffff';
-    let gs=Math.round(H*0.088), gls=Math.round(gs*0.10);
+    let gs=Math.round(H*0.132), gls=Math.round(gs*0.10);
     setFont(PRE,700,gs); g.letterSpacing=gls+'px';
-    g.fillText(gisuLabel(gisu), cx+gls/2, H*0.505);
+    g.fillText(gisuLabel(gisu), cx+gls/2, H*0.48);
     g.letterSpacing='0px';
 
     // 4) 이름 (크게, 흰색 · 음절 띄어쓰기, 외자 두 칸)
