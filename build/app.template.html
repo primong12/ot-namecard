@@ -126,6 +126,26 @@
   .ntitem .dl:hover{background:var(--accent);color:#fff}
   .ntitem .rm{font-size:14px;line-height:1;padding:6px 9px;background:#f0f2f8;color:var(--ink-soft);border-radius:7px}
   .ntitem .rm:hover{background:var(--danger);color:#fff}
+
+  /* ===== 사용자지정 탭 ===== */
+  .custom-grid{display:grid;grid-template-columns:minmax(260px,1fr) minmax(320px,1.15fr);gap:16px;margin-bottom:20px}
+  @media(max-width:860px){.custom-grid{grid-template-columns:1fr}}
+  .field input[type=text]{width:100%;border:1px solid var(--line);border-radius:10px;padding:12px;font-size:15px;font-family:inherit}
+  .field input[type=text]:focus{outline:none;border-color:var(--accent)}
+  .field .lbl{display:block;font-size:13px;font-weight:700;margin:14px 0 8px}
+  .field .lbl:first-child{margin-top:0}
+  .size-row{display:flex;align-items:center;gap:8px}
+  .size-row input{width:96px;border:1px solid var(--line);border-radius:10px;padding:10px;font-size:15px;font-family:inherit}
+  .size-row input:focus{outline:none;border-color:var(--accent)}
+  .size-row span{color:var(--ink-soft);font-size:14px}
+  .cu-drop{margin-top:0}
+  .cu-stage{background:#0d1626;border:1px solid var(--line);border-radius:10px;padding:12px;display:flex;justify-content:center;align-items:center;min-height:120px}
+  .cu-stage canvas{max-width:100%;height:auto;cursor:move;border-radius:4px;touch-action:none;display:block}
+  .cu-sliders{display:flex;flex-direction:column;gap:10px;margin-top:14px;font-size:13px;color:var(--ink-soft)}
+  .cu-sliders label{display:flex;align-items:center;gap:10px}
+  .cu-sliders label b{color:var(--ink);font-weight:700;min-width:64px}
+  .cu-sliders input[type=range]{flex:1}
+  .cu-hint{font-size:12.5px;color:var(--ink-soft);margin-top:8px;text-align:center}
 </style>
 </head>
 <body>
@@ -141,6 +161,7 @@
     <button class="tab" data-pane="nametag">엘리트 이름표</button>
     <button class="tab" data-pane="lanyard">목걸이 명찰</button>
     <button class="tab" data-pane="stand">스탠드 이름표</button>
+    <button class="tab" data-pane="custom">사용자지정</button>
   </nav>
 
   <div id="pane-profile" class="pane">
@@ -255,6 +276,46 @@
     </div>
     <div class="ntres"><div class="empty">결과가 여기에 표시됩니다.</div></div>
   </div><!-- /pane-stand -->
+
+  <div id="pane-custom" class="pane" hidden>
+    <div class="custom-grid">
+      <div class="card field">
+        <span class="lbl">이미지 크기 (mm)</span>
+        <div class="size-row">
+          <input type="number" class="cu-w" min="10" max="1000" value="200"> <span>×</span>
+          <input type="number" class="cu-h" min="10" max="1000" value="75"> <span>mm</span>
+        </div>
+        <span class="lbl">배경 이미지</span>
+        <div class="drop cu-drop">
+          <strong>배경 이미지를 끌어다 놓거나 클릭</strong>
+          JPG / PNG · 카드 전체에 채워집니다
+          <div class="count cu-bgname">아직 없음</div>
+        </div>
+        <input type="file" class="cu-file" accept="image/*" hidden>
+        <span class="lbl">기수</span>
+        <input type="text" class="cu-gisu" placeholder="예: 1기 · 게스트 · STAFF (비우면 표시 안 함)">
+        <span class="lbl">이름 명단</span>
+        <textarea class="cu-names" placeholder="한 줄에 한 명씩&#10;&#10;홍길동&#10;이효석&#10;강호동"></textarea>
+        <p class="cu-hint" style="text-align:left">미리보기의 기수·이름을 마우스로 끌어 위치를 정하고, 오른쪽 슬라이더로 크기를 맞춘 뒤 아래 '만들기'를 누르면 명단 전체가 같은 설정으로 만들어집니다.</p>
+      </div>
+      <div class="card">
+        <span class="lbl">미리보기 <span style="font-weight:400;color:var(--ink-soft)">· 기수·이름을 끌어서 위치 조정</span></span>
+        <div class="cu-stage"><canvas class="cu-canvas" width="800" height="300"></canvas></div>
+        <div class="cu-sliders">
+          <label><b>기수 크기</b><input type="range" class="cu-gs" min="0.03" max="0.6" step="0.005" value="0.16"></label>
+          <label><b>이름 크기</b><input type="range" class="cu-ns" min="0.05" max="0.7" step="0.005" value="0.34"></label>
+        </div>
+        <p class="cu-hint">배경 이미지를 올리면 미리보기가 바로 나타납니다.</p>
+      </div>
+    </div>
+    <div class="bar">
+      <button class="btn-primary cu-run" disabled>만들기</button>
+      <button class="btn-ghost cu-pdf" disabled>A4 PDF 저장</button>
+      <button class="btn-ghost cu-clear" disabled>전체 지우기</button>
+      <span class="status cu-status">배경 이미지와 명단을 준비해 주세요.</span>
+    </div>
+    <div class="ntres cu-res"><div class="empty">결과가 여기에 표시됩니다.</div></div>
+  </div><!-- /pane-custom -->
 </div>
 
 <script>
@@ -1114,10 +1175,188 @@ function setStatus(t,busy){ const s=$('status'); s.textContent=t; s.className='s
     return out;
   }
 
-  // 세 탭 배선
+  // ---- 사용자지정 탭 ----
+  //  배경 이미지(드래그앤드롭) + 크기(mm) + 기수/이름 명단
+  //  오른쪽 미리보기에서 기수·이름을 끌어 위치, 슬라이더로 크기 조정 → '만들기'로 명단 일괄 생성
+  function computeA4Layout(wmm, hmm){
+    const gap=8, margin=8;
+    const fit=(pw,ph)=>{
+      const cols=Math.max(1,Math.floor((pw-2*margin+gap)/(wmm+gap)));
+      const rows=Math.max(1,Math.floor((ph-2*margin+gap)/(hmm+gap)));
+      return {cols,rows,per:cols*rows};
+    };
+    const p=fit(210,297), l=fit(297,210);
+    const best = l.per>p.per ? {orient:'landscape',...l} : {orient:'portrait',...p};
+    return {orient:best.orient, cols:best.cols, rows:best.rows, gapX:gap, gapY:gap};
+  }
+
+  function makeCustomTab(){
+    const pane=$('pane-custom'); if(!pane) return;
+    const wEl=pane.querySelector('.cu-w'), hEl=pane.querySelector('.cu-h');
+    const drop=pane.querySelector('.cu-drop'), fileEl=pane.querySelector('.cu-file'), bgNameEl=pane.querySelector('.cu-bgname');
+    const gisuEl=pane.querySelector('.cu-gisu'), namesEl=pane.querySelector('.cu-names');
+    const pv=pane.querySelector('.cu-canvas');
+    const gsEl=pane.querySelector('.cu-gs'), nsEl=pane.querySelector('.cu-ns');
+    const runEl=pane.querySelector('.cu-run'), pdfEl=pane.querySelector('.cu-pdf'), clearEl=pane.querySelector('.cu-clear');
+    const statusEl=pane.querySelector('.cu-status'), resEl=pane.querySelector('.cu-res');
+
+    let bgImg=null, cards=[], boxes={};
+    const settings = {
+      gisu: {xf:0.5, yf:0.30, sizeF:0.16, weight:700},
+      name: {xf:0.5, yf:0.62, sizeF:0.34, weight:800},
+    };
+    const setStatus=(t,b)=>{ statusEl.textContent=t; statusEl.className='status cu-status'+(b?' busy':''); };
+    const wmm=()=>Math.max(10, parseFloat(wEl.value)||200);
+    const hmm=()=>Math.max(10, parseFloat(hEl.value)||75);
+    const nameList=()=> namesEl.value.split(/[\n,]+/).map(s=>s.replace(/\s+/g,' ').trim()).filter(Boolean);
+    const sampleGisu=()=> gisuEl.value.trim();
+    const sampleName=()=> nameList()[0] || '이효석';
+
+    // 배경 + 기수/이름 그리기 (W×H 캔버스). boxesOut 있으면 글자 박스(분수)를 채움
+    function paint(g, W, H, gisuText, nameText, boxesOut){
+      if(bgImg) g.drawImage(bgImg, 0, 0, W, H);
+      else { g.fillStyle='#1f2c48'; g.fillRect(0,0,W,H); }
+      const drawT=(txt, s, key)=>{
+        if(!txt) { if(boxesOut) boxesOut[key]=null; return; }
+        const fpx=Math.max(6, s.sizeF*H);
+        g.font=`${s.weight} ${fpx}px "Pretendard","Apple SD Gothic Neo",sans-serif`;
+        g.textAlign='center'; g.textBaseline='middle'; g.fillStyle='#ffffff'; g.letterSpacing='0px';
+        const x=s.xf*W, y=s.yf*H;
+        g.fillText(txt, x, y);
+        if(boxesOut){ const tw=g.measureText(txt).width, th=fpx;
+          boxesOut[key]={x0:(x-tw/2)/W, y0:(y-th/2)/H, x1:(x+tw/2)/W, y1:(y+th/2)/H}; }
+      };
+      drawT(gisuText, settings.gisu, 'gisu');
+      drawT(nameText, settings.name, 'name');
+    }
+
+    // 미리보기 (저해상도 · 부드러운 드래그) + 점선 박스
+    function drawPreview(){
+      const W=wmm(), H=hmm();
+      const k = 720/Math.max(W,H);          // 최대 변 ~720px
+      pv.width=Math.round(W*k); pv.height=Math.round(H*k);
+      const g=pv.getContext('2d');
+      g.clearRect(0,0,pv.width,pv.height);
+      boxes={};
+      paint(g, pv.width, pv.height, sampleGisu(), sampleName(), boxes);
+      // 점선 박스 (끌 수 있음 표시)
+      g.save(); g.strokeStyle='rgba(255,255,255,0.55)'; g.lineWidth=1; g.setLineDash([5,4]);
+      for(const key of ['gisu','name']){ const b=boxes[key]; if(!b) continue;
+        const pad=6; g.strokeRect(b.x0*pv.width-pad, b.y0*pv.height-pad, (b.x1-b.x0)*pv.width+2*pad, (b.y1-b.y0)*pv.height+2*pad); }
+      g.restore();
+    }
+
+    // ---- 드래그로 위치 이동 ----
+    let dragging=null, dragOff={dx:0,dy:0};
+    const ptFrac=e=>{ const r=pv.getBoundingClientRect(); const cx=(e.touches?e.touches[0].clientX:e.clientX), cy=(e.touches?e.touches[0].clientY:e.clientY);
+      return { fx:(cx-r.left)/r.width, fy:(cy-r.top)/r.height }; };
+    const hit=(fx,fy)=>{ for(const key of ['name','gisu']){ const b=boxes[key]; if(!b) continue;
+      const mx=0.03, my=0.05; if(fx>=b.x0-mx&&fx<=b.x1+mx&&fy>=b.y0-my&&fy<=b.y1+my) return key; } return null; };
+    const onDown=e=>{ const {fx,fy}=ptFrac(e); const h=hit(fx,fy); if(h){ dragging=h; dragOff={dx:fx-settings[h].xf, dy:fy-settings[h].yf}; e.preventDefault(); } };
+    const onMove=e=>{ if(!dragging) return; const {fx,fy}=ptFrac(e);
+      settings[dragging].xf=Math.max(0,Math.min(1, fx-dragOff.dx));
+      settings[dragging].yf=Math.max(0,Math.min(1, fy-dragOff.dy)); drawPreview(); e.preventDefault(); };
+    const onUp=()=>{ dragging=null; };
+    pv.addEventListener('mousedown',onDown); window.addEventListener('mousemove',onMove); window.addEventListener('mouseup',onUp);
+    pv.addEventListener('touchstart',onDown,{passive:false}); window.addEventListener('touchmove',onMove,{passive:false}); window.addEventListener('touchend',onUp);
+
+    // ---- 크기 슬라이더 ----
+    gsEl.oninput=()=>{ settings.gisu.sizeF=parseFloat(gsEl.value); drawPreview(); };
+    nsEl.oninput=()=>{ settings.name.sizeF=parseFloat(nsEl.value); drawPreview(); };
+
+    // ---- 배경 업로드(드래그앤드롭 + 클릭) ----
+    drop.onclick=()=>fileEl.click();
+    ['dragover','dragenter'].forEach(ev=>drop.addEventListener(ev,e=>{e.preventDefault();drop.classList.add('over')}));
+    ['dragleave','drop'].forEach(ev=>drop.addEventListener(ev,e=>{e.preventDefault();drop.classList.remove('over')}));
+    drop.addEventListener('drop',e=>loadBg(e.dataTransfer.files[0]));
+    fileEl.onchange=()=>loadBg(fileEl.files[0]);
+    function loadBg(file){
+      if(!file || !file.type.startsWith('image/')) return;
+      const url=URL.createObjectURL(file);
+      loadImg(url).then(img=>{ bgImg=img; bgNameEl.textContent=file.name; drawPreview(); refresh();
+        setStatus('배경 준비됨 · 위치·크기 맞춘 뒤 만들기', false); });
+    }
+
+    // ---- 입력 반영 ----
+    [wEl,hEl].forEach(el=>el.oninput=()=>{ drawPreview(); refresh(); });
+    gisuEl.oninput=()=>{ drawPreview(); refresh(); };
+    namesEl.oninput=()=>{ drawPreview(); refresh(); };
+
+    function refresh(){
+      const n=nameList().length;
+      runEl.disabled = !(bgImg && n);
+      pdfEl.disabled = !cards.length;
+      clearEl.disabled = !cards.length;
+    }
+
+    // ---- 실제 카드 렌더 (300dpi) ----
+    function renderCard(name, gisu){
+      const W=Math.round(wmm()/25.4*300), H=Math.round(hmm()/25.4*300);
+      const cv=document.createElement('canvas'); cv.width=W; cv.height=H;
+      paint(cv.getContext('2d'), W, H, gisu, name, null);
+      return cv;
+    }
+
+    // ---- 만들기 (명단 전체) ----
+    runEl.onclick=async()=>{
+      const names=nameList(), gisu=sampleGisu();
+      if(!bgImg || !names.length) return;
+      setStatus('폰트 불러오는 중…', true);
+      try{ await document.fonts.load('800 80px "Pretendard"'); await document.fonts.load('700 80px "Pretendard"'); await document.fonts.ready; }catch(e){}
+      cards=[];
+      for(let i=0;i<names.length;i++){ setStatus(`만드는 중… ${i+1}/${names.length}`, true);
+        cards.push({name:names[i], gisu, canvas:renderCard(names[i], gisu)}); }
+      renderCards(); refresh();
+      setStatus(`완료 · 총 ${cards.length}장 (${wmm()}×${hmm()}mm)`, false);
+    };
+
+    function renderCards(){
+      resEl.innerHTML='';
+      if(!cards.length){ resEl.innerHTML='<div class="empty">결과가 여기에 표시됩니다.</div>'; return; }
+      cards.forEach((c,idx)=>{
+        const el=document.createElement('div'); el.className='ntitem';
+        el.innerHTML=`<div class="imgwrap"><img alt=""></div>
+          <div class="meta">
+            ${c.gisu?`<span class="tt" style="background:#2f4ad0;color:#fff">${c.gisu}</span>`:''}
+            <input class="nm" type="text" spellcheck="false" title="이름 클릭해서 수정">
+            <button class="dl">저장</button>
+            <button class="rm" title="삭제">✕</button>
+          </div>`;
+        el.querySelector('img').src=c.canvas.toDataURL('image/png');
+        const nm=el.querySelector('.nm'); nm.value=c.name;
+        nm.onchange=()=>{ const v=nm.value.trim(); if(v){ c.name=v; c.canvas=renderCard(v,c.gisu); el.querySelector('img').src=c.canvas.toDataURL('image/png'); } };
+        nm.onkeydown=e=>{ if(e.key==='Enter') nm.blur(); };
+        el.querySelector('.dl').onclick=async()=>{ const b=await pngBlobWithDpi(c.canvas,300);
+          const a=document.createElement('a'); a.href=URL.createObjectURL(b);
+          a.download=`사용자지정_${c.gisu?sani(c.gisu)+'_':''}${sani(c.name)}.png`; a.click(); URL.revokeObjectURL(a.href); };
+        el.querySelector('.rm').onclick=()=>{ cards.splice(idx,1); renderCards(); refresh(); };
+        resEl.appendChild(el);
+      });
+    }
+
+    clearEl.onclick=()=>{ if(!cards.length) return; cards=[]; renderCards(); refresh(); setStatus('전체 지웠습니다.', false); };
+
+    pdfEl.onclick=async()=>{
+      if(!cards.length) return; setStatus('PDF 만드는 중…', true);
+      try{
+        const W=Math.round(wmm()/25.4*300), H=Math.round(hmm()/25.4*300);
+        const lay=computeA4Layout(wmm(), hmm());
+        const fmt={W, H, cardWmm:wmm(), cardHmm:hmm(), fileTag:'사용자지정', ...lay};
+        const bytes=await buildTagPDF(cards, fmt);
+        const a=document.createElement('a'); a.href=URL.createObjectURL(new Blob([bytes],{type:'application/pdf'}));
+        a.download=`사용자지정_${cards[0].gisu?sani(cards[0].gisu):'명찰'}.pdf`; a.click(); URL.revokeObjectURL(a.href);
+        setStatus(`완료 · ${cards.length}장 · A4 ${Math.ceil(cards.length/(lay.cols*lay.rows))}장`, false);
+      }catch(e){ setStatus('PDF 생성 오류: '+e.message, false); }
+    };
+
+    drawPreview(); refresh();
+  }
+
+  // 탭 배선
   makeTab(FORMATS.nametag);
   makeTab(FORMATS.lanyard);
   makeTab(FORMATS.stand);
+  makeCustomTab();
 })();
 </script>
 </body>
