@@ -1200,7 +1200,7 @@ function setStatus(t,busy){ const s=$('status'); s.textContent=t; s.className='s
     const runEl=pane.querySelector('.cu-run'), pdfEl=pane.querySelector('.cu-pdf'), clearEl=pane.querySelector('.cu-clear');
     const statusEl=pane.querySelector('.cu-status'), resEl=pane.querySelector('.cu-res');
 
-    let bgImg=null, cards=[], boxes={};
+    let bgImg=null, cards=[], boxes={}, snap={x:null,y:null};
     const settings = {
       gisu: {xf:0.5, yf:0.30, sizeF:0.16, weight:700},
       name: {xf:0.5, yf:0.62, sizeF:0.34, weight:800},
@@ -1244,6 +1244,13 @@ function setStatus(t,busy){ const s=$('status'); s.textContent=t; s.className='s
       for(const key of ['gisu','name']){ const b=boxes[key]; if(!b) continue;
         const pad=6; g.strokeRect(b.x0*pv.width-pad, b.y0*pv.height-pad, (b.x1-b.x0)*pv.width+2*pad, (b.y1-b.y0)*pv.height+2*pad); }
       g.restore();
+      // 스냅 가이드선 (포토샵식 · 가운데/상대 정렬에 딱 붙을 때)
+      if(snap.x!=null || snap.y!=null){
+        g.save(); g.strokeStyle='#26d0ce'; g.lineWidth=1.5; g.setLineDash([]);
+        if(snap.x!=null){ const x=Math.round(snap.x*pv.width)+0.5; g.beginPath(); g.moveTo(x,0); g.lineTo(x,pv.height); g.stroke(); }
+        if(snap.y!=null){ const y=Math.round(snap.y*pv.height)+0.5; g.beginPath(); g.moveTo(0,y); g.lineTo(pv.width,y); g.stroke(); }
+        g.restore();
+      }
     }
 
     // ---- 드래그로 위치 이동 ----
@@ -1254,9 +1261,14 @@ function setStatus(t,busy){ const s=$('status'); s.textContent=t; s.className='s
       const mx=0.03, my=0.05; if(fx>=b.x0-mx&&fx<=b.x1+mx&&fy>=b.y0-my&&fy<=b.y1+my) return key; } return null; };
     const onDown=e=>{ const {fx,fy}=ptFrac(e); const h=hit(fx,fy); if(h){ dragging=h; dragOff={dx:fx-settings[h].xf, dy:fy-settings[h].yf}; e.preventDefault(); } };
     const onMove=e=>{ if(!dragging) return; const {fx,fy}=ptFrac(e);
-      settings[dragging].xf=Math.max(0,Math.min(1, fx-dragOff.dx));
-      settings[dragging].yf=Math.max(0,Math.min(1, fy-dragOff.dy)); drawPreview(); e.preventDefault(); };
-    const onUp=()=>{ dragging=null; };
+      let nx=Math.max(0,Math.min(1, fx-dragOff.dx)), ny=Math.max(0,Math.min(1, fy-dragOff.dy));
+      // 자석 스냅: 가로/세로 정중앙(0.5) + 반대편 글자와 같은 축에 딱 붙기
+      const other = dragging==='gisu' ? settings.name : settings.gisu;
+      const TH=0.016; snap={x:null,y:null};
+      for(const t of [0.5, other.xf]){ if(Math.abs(nx-t)<TH){ nx=t; snap.x=t; break; } }
+      for(const t of [0.5, other.yf]){ if(Math.abs(ny-t)<TH){ ny=t; snap.y=t; break; } }
+      settings[dragging].xf=nx; settings[dragging].yf=ny; drawPreview(); e.preventDefault(); };
+    const onUp=()=>{ if(!dragging) return; dragging=null; snap={x:null,y:null}; drawPreview(); };
     pv.addEventListener('mousedown',onDown); window.addEventListener('mousemove',onMove); window.addEventListener('mouseup',onUp);
     pv.addEventListener('touchstart',onDown,{passive:false}); window.addEventListener('touchmove',onMove,{passive:false}); window.addEventListener('touchend',onUp);
 
