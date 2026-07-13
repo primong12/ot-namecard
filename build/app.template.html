@@ -190,7 +190,7 @@
     <div class="ntgrid">
       <div class="card field">
         <label>기수</label>
-        <input type="number" class="nt-gisu" min="1" value="5" placeholder="예: 5">
+        <input type="number" class="nt-gisu" min="1" value="1" placeholder="예: 1">
         <div class="teamsel">
           <button class="teambtn active" data-team="growth"><span class="dot"></span>그로스</button>
           <button class="teambtn" data-team="value"><span class="dot"></span>밸류</button>
@@ -923,7 +923,7 @@ function setStatus(t,busy){ const s=$('status'); s.textContent=t; s.className='s
     // 기수 드롭다운 채우기 (게스트 + 1기~100기, 기본 5기)
     if(fmt.gisuBand && gisuEl.tagName==='SELECT'){
       let opts='<option value="guest">게스트</option><option value="staff">STAFF</option>';
-      for(let i=1;i<=100;i++) opts+=`<option value="${i}"${i===5?' selected':''}>${i}기</option>`;
+      for(let i=1;i<=100;i++) opts+=`<option value="${i}"${i===1?' selected':''}>${i}기</option>`;
       gisuEl.innerHTML=opts;
     }
 
