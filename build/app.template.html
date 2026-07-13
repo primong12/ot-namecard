@@ -770,7 +770,7 @@ function setStatus(t,busy){ const s=$('status'); s.textContent=t; s.className='s
   //  draw     : 카드 한 장 그리는 함수 (name, team, gisu, W, H) → canvas
   const FORMATS = {
     nametag: { key:'nametag', W:1287, H:827,  cardWmm:109, cardHmm:70,  orient:'landscape', cols:2, rows:2, gapX:25, gapY:20, fileTag:'엘리트_이름표', teams:true,  gisuBand:false, draw:renderTag },
-    lanyard: { key:'lanyard', W:1146, H:1429, cardWmm:97,  cardHmm:121, orient:'portrait',  cols:2, rows:2, gapX:0,  gapY:16, fileTag:'목걸이_명찰',  teams:false, gisuBand:true,  draw:renderLanyard },
+    lanyard: { key:'lanyard', W:1146, H:1429, cardWmm:97,  cardHmm:121, orient:'portrait',  cols:2, rows:2, gapX:3,  gapY:16, fileTag:'목걸이_명찰',  teams:false, gisuBand:true,  draw:renderLanyard },
     stand:   { key:'stand',   W:2362, H:886,  cardWmm:200, cardHmm:75,  orient:'portrait',  cols:1, rows:3, gapX:0,  gapY:16, fileTag:'스탠드_이름표', teams:false, gisuBand:true,  draw:renderStand },
   };
 
